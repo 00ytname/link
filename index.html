@@ -2,13 +2,17 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>입력 페이지</title>
   <style>
     body {
       font-family: sans-serif;
-      padding: 20px;
       max-width: 800px;
+      width: 100%;
+      padding: 20px 10px;
+      box-sizing: border-box;
       margin: auto;
+      font-size: 16px;
     }
     .nav {
       margin-bottom: 20px;
@@ -24,15 +28,22 @@
     }
     textarea {
       width: 100%;
-      height: 200px;
+      min-height: 200px;
       margin-bottom: 10px;
       padding: 10px;
       font-family: monospace;
+      font-size: 16px;
+      line-height: 1.4;
+      resize: vertical;
+      box-sizing: border-box;
     }
     button {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin-top: 5px;
+      width: 100%;
+      max-width: 200px;
+      padding: 12px 20px;
+      font-size: 18px;
+      margin-top: 10px;
+      cursor: pointer;
     }
     .result {
       margin-top: 20px;
@@ -55,13 +66,14 @@
   </div>
 
   <h1>링크 입력</h1>
-  <textarea id="linkInput" placeholder="https://www.instagram.com/아이디"></textarea>
+  <textarea id="linkInput" placeholder="https://www.instagram.com/아이디
+https://www.tiktok.com/@아이디"></textarea>
   <br />
   <button onclick="submitLinks()">저장하기</button>
 
   <div class="result" id="resultBox"></div>
   <div class="error" id="duplicateBox"></div>
-  <div class="error" id="invalidBox"></div> <!-- ★ 잘못된 링크 메시지 표시용 -->
+  <div class="error" id="invalidBox"></div> <!-- 잘못된 링크 메시지 표시 -->
 
   <!-- Firebase SDK 모듈 로딩 -->
   <script type="module">
@@ -85,6 +97,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // 플랫폼과 아이디 추출 함수
     function extractPlatformAndId(url) {
       try {
         const cleanUrl = url.trim().split("?")[0];
@@ -105,6 +118,7 @@
       return null;
     }
 
+    // 현재 날짜시간 문자열 생성
     function getCurrentTimestamp() {
       const now = new Date();
       const yyyy = now.getFullYear();
@@ -120,8 +134,9 @@
       const input = document.getElementById("linkInput").value;
       const lines = input
         .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line !== "");
+        .map(line => line.trim())
+        .filter(line => line !== "");
+
       const resultBox = document.getElementById("resultBox");
       const duplicateBox = document.getElementById("duplicateBox");
       const invalidBox = document.getElementById("invalidBox");
@@ -133,7 +148,7 @@
       for (const line of lines) {
         const info = extractPlatformAndId(line);
         if (!info) {
-          invalidLinks.push(line); // ★ 잘못된 링크 수집
+          invalidLinks.push(line);
           continue;
         }
 
