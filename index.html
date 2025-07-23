@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>입력 페이지</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+    .nav {
+      margin-bottom: 20px;
+    }
+    .nav a {
+      margin-right: 15px;
+      text-decoration: none;
+      font-weight: bold;
+      color: #333;
+    }
+    .nav a:hover {
+      text-decoration: underline;
+    }
+    textarea {
+      width: 100%;
+      height: 200px;
+      margin-bottom: 10px;
+      padding: 10px;
+      font-family: monospace;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 5px;
+    }
+    .result {
+      margin-top: 20px;
+      color: green;
+      white-space: pre-wrap;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a href="index.html">입력</a>
+    <a href="instagram.html">인스타그램</a>
+    <a href="tiktok.html">틱톡</a>
+    <a href="search.html">검색</a>
+  </div>
+
+  <h1>링크 입력</h1>
+  <textarea id="linkInput" placeholder="https://www.instagram.com/아이디"></textarea>
+  <br />
+  <button onclick="submitLinks()">저장하기</button>
+
+  <div class="result" id="resultBox"></div>
+  <div class="error" id="duplicateBox"></div>
+  <div class="error" id="invalidBox"></div> <!-- ★ 잘못된 링크 메시지 표시용 -->
+
+  <!-- Firebase SDK 모듈 로딩 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0FkKVoevwIkIAx64PycLm_bZDXk1Rflc",
+      authDomain: "instatiktok-1961b.firebaseapp.com",
+      projectId: "instatiktok-1961b",
+      storageBucket: "instatiktok-1961b.appspot.com",
+      messagingSenderId: "256647744023",
+      appId: "1:256647744023:web:1de0d62b5189088378aa52"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    function extractPlatformAndId(url) {
+      try {
+        const cleanUrl = url.trim().split("?")[0];
+        const u = new URL(cleanUrl);
+
+        if (u.hostname.includes("instagram.com")) {
+          const match = cleanUrl.match(/instagram\.com\/([^\/?#]+)/);
+          if (match) return { platform: "instagram", id: match[1], link: url };
+        }
+
+        if (u.hostname.includes("tiktok.com")) {
+          const match = cleanUrl.match(/tiktok\.com\/@([^\/?#]+)/);
+          if (match) return { platform: "tiktok", id: match[1], link: url };
+        }
+      } catch (e) {
+        return null;
+      }
+      return null;
+    }
+
+    function getCurrentTimestamp() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      const hh = String(now.getHours()).padStart(2, "0");
+      const min = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+    }
+
+    async function submitLinks() {
+      const input = document.getElementById("linkInput").value;
+      const lines = input
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line !== "");
+      const resultBox = document.getElementById("resultBox");
+      const duplicateBox = document.getElementById("duplicateBox");
+      const invalidBox = document.getElementById("invalidBox");
+
+      let savedCount = 0;
+      let duplicates = [];
+      let invalidLinks = [];
+
+      for (const line of lines) {
+        const info = extractPlatformAndId(line);
+        if (!info) {
+          invalidLinks.push(line); // ★ 잘못된 링크 수집
+          continue;
+        }
+
+        const docRef = doc(db, info.platform, info.id);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          duplicates.push(info.id);
+          continue;
+        }
+
+        const data = {
+          id: info.id,
+          name: "",
+          group: "",
+          timestamp: getCurrentTimestamp(),
+          link: info.link
+        };
+
+        try {
+          await setDoc(docRef, data);
+          savedCount++;
+        } catch (e) {
+          console.error(`Failed to save ${info.id}:`, e);
+        }
+      }
+
+      resultBox.innerText = `${savedCount}개의 링크가 저장되었습니다.`;
+      duplicateBox.innerText = duplicates.length > 0
+        ? "중복된 아이디로 저장하지 않은 항목:\n" + duplicates.join("\n")
+        : "";
+      invalidBox.innerText = invalidLinks.length > 0
+        ? "해당하는 플랫폼이 아닌 링크:\n" + invalidLinks.join("\n")
+        : "";
+
+      document.getElementById("linkInput").value = "";
+    }
+
+    window.submitLinks = submitLinks;
+  </script>
+</body>
+</html>
