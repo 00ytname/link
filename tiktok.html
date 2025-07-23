@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>틱톡 데이터 출력</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    .nav {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav a {
+      margin-right: 15px;
+      text-decoration: none;
+      font-weight: bold;
+      color: #333;
+    }
+    .nav a:hover {
+      text-decoration: underline;
+    }
+    .group-add {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .group-add input[type="text"] {
+      padding: 4px 8px;
+      font-size: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+      text-align: left;
+    }
+    button {
+      margin-left: 5px;
+    }
+    select, input.editable {
+      font-size: 14px;
+      padding: 4px;
+    }
+    td .readonly-text {
+      cursor: default;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <div>
+      <a href="index.html">입력</a>
+      <a href="instagram.html">인스타그램</a>
+      <a href="tiktok.html">틱톡</a>
+      <a href="search.html">검색</a>
+    </div>
+    <div class="group-add">
+      <input type="text" id="newGroupInput" placeholder="새 그룹명 입력" />
+      <button id="addGroupBtn">그룹 추가</button>
+    </div>
+  </div>
+
+  <h1>틱톡 데이터 출력</h1>
+  <label>
+    정렬 방식:
+    <select id="sortSelect">
+      <option value="latest">최신순</option>
+      <option value="id">아이디순</option>
+      <option value="name">이름순</option>
+      <option value="group">그룹순</option>
+      <option value="timestamp">기록날짜순</option>
+      <option value="lastEdited">수정날짜순</option>
+    </select>
+  </label>
+
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>아이디</th>
+        <th>이름</th>
+        <th>그룹</th>
+        <th>기록날짜</th>
+        <th>수정날짜</th>
+        <th>링크</th>
+        <th>수정</th>
+        <th>삭제</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      doc,
+      updateDoc,
+      deleteDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0FkKVoevwIkIAx64PycLm_bZDXk1Rflc",
+      authDomain: "instatiktok-1961b.firebaseapp.com",
+      projectId: "instatiktok-1961b",
+      storageBucket: "instatiktok-1961b.appspot.com",
+      messagingSenderId: "256647744023",
+      appId: "1:256647744023:web:1de0d62b5189088378aa52"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let data = [];
+    let groups = new Set();
+
+    const tableBody = document.querySelector("#dataTable tbody");
+    const sortSelect = document.getElementById("sortSelect");
+    const addGroupBtn = document.getElementById("addGroupBtn");
+    const newGroupInput = document.getElementById("newGroupInput");
+
+    function formatDate(dateStr) {
+      return dateStr || "-";
+    }
+
+    function getCurrentTimestamp() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      const hh = String(now.getHours()).padStart(2, "0");
+      const min = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+    }
+
+    addGroupBtn.onclick = () => {
+      const newGroup = newGroupInput.value.trim();
+      if (!newGroup) {
+        alert("그룹명을 입력해주세요.");
+        return;
+      }
+      if (groups.has(newGroup)) {
+        alert("이미 존재하는 그룹명입니다.");
+        return;
+      }
+      groups.add(newGroup);
+      alert(`그룹 "${newGroup}" 이(가) 추가되었습니다.`);
+      newGroupInput.value = "";
+      renderTable(data);
+    };
+
+    async function loadData() {
+      const snapshot = await getDocs(collection(db, "tiktok"));
+      data = [];
+      groups.clear();
+      snapshot.forEach((doc) => {
+        const item = { docId: doc.id, ...doc.data() };
+        data.push(item);
+        if (item.group) groups.add(item.group);
+      });
+      sortAndRender();
+    }
+
+    function sortAndRender() {
+      let sorted = [...data];
+      switch (sortSelect.value) {
+        case "latest":
+        case "timestamp":
+          sorted.sort(
+            (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+          );
+          break;
+        case "id":
+          sorted.sort((a, b) => a.id.localeCompare(b.id));
+          break;
+        case "name":
+          sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+          break;
+        case "group":
+          sorted.sort((a, b) => (a.group || "").localeCompare(b.group || ""));
+          break;
+        case "lastEdited":
+          sorted.sort(
+            (a, b) =>
+              new Date(b.lastEdited || 0).getTime() -
+              new Date(a.lastEdited || 0).getTime()
+          );
+          break;
+      }
+      renderTable(sorted);
+    }
+
+    function createGroupSelect(selectedGroup, docId) {
+      const select = document.createElement("select");
+      select.dataset.id = docId;
+
+      const emptyOption = document.createElement("option");
+      emptyOption.value = "";
+      emptyOption.textContent = "(없음)";
+      if (!selectedGroup) emptyOption.selected = true;
+      select.appendChild(emptyOption);
+
+      groups.forEach((g) => {
+        const option = document.createElement("option");
+        option.value = g;
+        option.textContent = g;
+        if (g === selectedGroup) option.selected = true;
+        select.appendChild(option);
+      });
+
+      return select;
+    }
+
+    function renderTable(list) {
+      tableBody.innerHTML = "";
+      list.forEach((item) => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td class="id-cell">${item.id}</td>
+          <td class="name-cell readonly-text" data-id="${item.docId}">${item.name || ""}</td>
+          <td class="group-cell readonly-text" data-id="${item.docId}">${item.group || ""}</td>
+          <td>${formatDate(item.timestamp)}</td>
+          <td>${formatDate(item.lastEdited)}</td>
+          <td><a href="${item.link}" target="_blank" rel="noopener noreferrer">📎</a></td>
+          <td><button class="editBtn" data-id="${item.docId}">✏️ 수정</button></td>
+          <td><button class="deleteBtn" data-id="${item.docId}">❌ 삭제</button></td>
+        `;
+        tableBody.appendChild(tr);
+      });
+
+      document.querySelectorAll(".editBtn").forEach((btn) => {
+        btn.onclick = (e) => {
+          const id = e.target.dataset.id;
+          const tr = e.target.closest("tr");
+          const nameCell = tr.querySelector(".name-cell");
+          const groupCell = tr.querySelector(".group-cell");
+          const editBtn = e.target;
+
+          const isEditing = nameCell.querySelector("input") !== null;
+
+          if (!isEditing) {
+            const currentName = nameCell.textContent.trim();
+            const currentGroup = groupCell.textContent.trim();
+
+            const nameInput = document.createElement("input");
+            nameInput.type = "text";
+            nameInput.className = "editable";
+            nameInput.value = currentName;
+            nameInput.dataset.id = id;
+
+            const groupSelect = createGroupSelect(currentGroup, id);
+
+            nameCell.innerHTML = "";
+            nameCell.appendChild(nameInput);
+            nameCell.classList.remove("readonly-text");
+
+            groupCell.innerHTML = "";
+            groupCell.appendChild(groupSelect);
+            groupCell.classList.remove("readonly-text");
+
+            editBtn.textContent = "💾 저장";
+          } else {
+            const nameInput = nameCell.querySelector("input");
+            const groupSelect = groupCell.querySelector("select");
+
+            const newName = nameInput.value.trim();
+            const newGroup = groupSelect.value;
+
+            if (newGroup && !groups.has(newGroup)) {
+              groups.add(newGroup);
+              alert(`새 그룹 "${newGroup}" 이(가) 자동 추가되었습니다.`);
+            }
+
+            updateDoc(doc(db, "tiktok", id), {
+              name: newName,
+              group: newGroup,
+              lastEdited: getCurrentTimestamp()
+            })
+              .then(() => {
+                loadData();
+              })
+              .catch((e) => alert("수정 실패: " + e));
+
+            editBtn.textContent = "✏️ 수정";
+          }
+        };
+      });
+
+      document.querySelectorAll(".deleteBtn").forEach((btn) => {
+        btn.onclick = async (e) => {
+          if (!confirm("정말 삭제하시겠습니까?")) return;
+          const id = e.target.dataset.id;
+          try {
+            await deleteDoc(doc(db, "tiktok", id));
+            alert("삭제 완료");
+            await loadData();
+          } catch (error) {
+            alert("삭제 실패: " + error);
+          }
+        };
+      });
+    }
+
+    sortSelect.addEventListener("change", sortAndRender);
+
+    loadData();
+  </script>
+</body>
+</html>

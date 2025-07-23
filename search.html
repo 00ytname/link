@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>인스타그램 / 틱톡 검색 (아이디/이름 분리, 수정/삭제)</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    .nav {
+      margin-bottom: 20px;
+    }
+    .nav a {
+      margin-right: 15px;
+      text-decoration: none;
+      font-weight: bold;
+      color: #333;
+    }
+    .nav a:hover {
+      text-decoration: underline;
+    }
+    label, select, input, button {
+      font-size: 16px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    a.link-icon {
+      font-size: 20px;
+      text-decoration: none;
+    }
+    button.editBtn, button.saveBtn, button.deleteBtn {
+      cursor: pointer;
+      padding: 4px 8px;
+      margin-right: 4px;
+    }
+    input.editable, select.editable {
+      font-size: 14px;
+      padding: 4px;
+      width: 90%;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a href="index.html">입력</a>
+    <a href="instagram.html">인스타그램</a>
+    <a href="tiktok.html">틱톡</a>
+    <a href="search.html">검색</a>
+  </div>
+
+  <h1>인스타그램 / 틱톡 검색 및 관리</h1>
+
+  <div>
+    <label for="platformSelect">플랫폼:</label>
+    <select id="platformSelect">
+      <option value="instagram">인스타그램</option>
+      <option value="tiktok">틱톡</option>
+    </select>
+  </div>
+
+  <div>
+    <label for="groupSelect">그룹:</label>
+    <select id="groupSelect" disabled>
+      <option value="">-- 전체 그룹 --</option>
+    </select>
+  </div>
+
+  <div>
+    <label for="idNameInput">아이디 / 이름 검색:</label>
+    <input type="text" id="idNameInput" placeholder="아이디 또는 이름 일부 입력" />
+  </div>
+
+  <button id="searchBtn">검색</button>
+
+  <table id="resultTable" style="display:none;">
+    <thead>
+      <tr>
+        <th>아이디</th>
+        <th>이름</th>
+        <th>그룹</th>
+        <th>기록날짜</th>
+        <th>수정날짜</th>
+        <th>링크</th>
+        <th>수정</th>
+        <th>삭제</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0FkKVoevwIkIAx64PycLm_bZDXk1Rflc",
+      authDomain: "instatiktok-1961b.firebaseapp.com",
+      projectId: "instatiktok-1961b",
+      storageBucket: "instatiktok-1961b.appspot.com",
+      messagingSenderId: "256647744023",
+      appId: "1:256647744023:web:1de0d62b5189088378aa52"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const platformSelect = document.getElementById("platformSelect");
+    const groupSelect = document.getElementById("groupSelect");
+    const idNameInput = document.getElementById("idNameInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const resultTable = document.getElementById("resultTable");
+    const resultBody = resultTable.querySelector("tbody");
+
+    // 플랫폼별 그룹 캐시
+    const platformGroupsCache = {
+      instagram: new Set(),
+      tiktok: new Set()
+    };
+
+    // 날짜 포맷 함수
+    function formatDate(dateStr) {
+      return dateStr || "-";
+    }
+
+    // 현재 시간 문자열
+    function getCurrentTimestamp() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      const hh = String(now.getHours()).padStart(2, "0");
+      const min = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+    }
+
+    // 플랫폼 변경 시 그룹 로드
+    platformSelect.addEventListener("change", () => {
+      loadGroups(platformSelect.value);
+    });
+
+    // 그룹 로드 함수
+    async function loadGroups(platform) {
+      groupSelect.innerHTML = '<option value="">-- 전체 그룹 --</option>';
+      groupSelect.disabled = true;
+
+      if (platformGroupsCache[platform].size > 0) {
+        for (const g of platformGroupsCache[platform]) {
+          const opt = document.createElement("option");
+          opt.value = g;
+          opt.textContent = g;
+          groupSelect.appendChild(opt);
+        }
+        groupSelect.disabled = false;
+        return;
+      }
+
+      try {
+        const snapshot = await getDocs(collection(db, platform));
+        const groups = new Set();
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.group) groups.add(data.group);
+        });
+        platformGroupsCache[platform] = groups;
+
+        for (const g of groups) {
+          const opt = document.createElement("option");
+          opt.value = g;
+          opt.textContent = g;
+          groupSelect.appendChild(opt);
+        }
+        groupSelect.disabled = false;
+      } catch (e) {
+        alert("그룹 불러오기 실패: " + e.message);
+      }
+    }
+
+    // 이름/아이디 필터 매칭 함수 (부분일치)
+    function matchesIdNameFilter(filter, id, name) {
+      if (!filter) return true;
+      const f = filter.toLowerCase();
+      const idLower = (id || "").toLowerCase();
+      const nameLower = (name || "").toLowerCase();
+      return idLower.includes(f) || nameLower.includes(f);
+    }
+
+    // 검색 버튼 클릭
+    searchBtn.onclick = async () => {
+      const platform = platformSelect.value;
+      const group = groupSelect.value.trim();
+      const idNameFilter = idNameInput.value.trim();
+
+      if (!platform) {
+        alert("플랫폼을 선택하세요.");
+        return;
+      }
+
+      resultBody.innerHTML = "";
+      resultTable.style.display = "none";
+
+      try {
+        const snapshot = await getDocs(collection(db, platform));
+        let results = [];
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          if (
+            !matchesIdNameFilter(idNameFilter, data.id, data.name) ||
+            (group && data.group !== group)
+          ) {
+            return;
+          }
+          results.push({ docId: docSnap.id, ...data });
+        });
+
+        if (results.length === 0) {
+          alert("조건에 맞는 결과가 없습니다.");
+          return;
+        }
+
+        // 최신순 정렬
+        results.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        for (const item of results) {
+          const tr = document.createElement("tr");
+
+          tr.innerHTML = `
+            <td class="id-cell readonly-text" data-id="${item.docId}">
+              ${escapeHtml(item.id)}
+            </td>
+            <td class="name-cell readonly-text" data-id="${item.docId}">
+              ${escapeHtml(item.name || "")}
+            </td>
+            <td class="group-cell readonly-text" data-id="${item.docId}">
+              ${escapeHtml(item.group || "")}
+            </td>
+            <td>${formatDate(item.timestamp)}</td>
+            <td>${formatDate(item.lastEdited)}</td>
+            <td><a href="${item.link}" class="link-icon" target="_blank" rel="noopener noreferrer">📎</a></td>
+            <td><button class="editBtn" data-id="${item.docId}">✏️ 수정</button></td>
+            <td><button class="deleteBtn" data-id="${item.docId}">❌ 삭제</button></td>
+          `;
+
+          resultBody.appendChild(tr);
+        }
+
+        resultTable.style.display = "table";
+
+        // 수정 버튼 이벤트 등록
+        document.querySelectorAll(".editBtn").forEach(btn => {
+          btn.onclick = onEditClick;
+        });
+
+        // 삭제 버튼 이벤트 등록
+        document.querySelectorAll(".deleteBtn").forEach(btn => {
+          btn.onclick = onDeleteClick;
+        });
+
+      } catch (e) {
+        alert("검색 중 오류가 발생했습니다: " + e.message);
+      }
+    };
+
+    // HTML 특수문자 이스케이프 함수 (XSS 방지)
+    function escapeHtml(text) {
+      if (!text) return "";
+      return text.replace(/[&<>"']/g, function(m) {
+        return {
+          '&': "&amp;",
+          '<': "&lt;",
+          '>': "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        }[m];
+      });
+    }
+
+    // 편집 버튼 클릭 핸들러
+    async function onEditClick(e) {
+      const btn = e.target;
+      const docId = btn.dataset.id;
+      const tr = btn.closest("tr");
+
+      const idCell = tr.querySelector(".id-cell");
+      const nameCell = tr.querySelector(".name-cell");
+      const groupCell = tr.querySelector(".group-cell");
+
+      const isEditing = nameCell.querySelector("input") !== null;
+
+      if (!isEditing) {
+        // 수정 모드 진입: input, select 생성
+        const currentId = idCell.textContent.trim();
+        const currentName = nameCell.textContent.trim();
+
+        // id는 수정 불가 → 텍스트로 고정
+        idCell.innerHTML = `<span style="user-select:none; font-weight:bold;">${escapeHtml(currentId)}</span>`;
+
+        // 이름 input 생성
+        const nameInput = document.createElement("input");
+        nameInput.type = "text";
+        nameInput.className = "editable";
+        nameInput.value = currentName;
+        nameCell.innerHTML = "";
+        nameCell.appendChild(nameInput);
+
+        // 그룹 select 생성
+        const select = document.createElement("select");
+        select.className = "editable";
+
+        // 빈값 옵션
+        const emptyOpt = document.createElement("option");
+        emptyOpt.value = "";
+        emptyOpt.textContent = "(없음)";
+        select.appendChild(emptyOpt);
+
+        // 그룹 목록 세팅
+        for (const g of platformGroupsCache[platformSelect.value]) {
+          const opt = document.createElement("option");
+          opt.value = g;
+          opt.textContent = g;
+          select.appendChild(opt);
+        }
+
+        const currentGroup = groupCell.textContent.trim();
+        select.value = currentGroup || "";
+        groupCell.innerHTML = "";
+        groupCell.appendChild(select);
+
+        btn.textContent = "💾 저장";
+
+      } else {
+        // 저장 모드: Firestore 업데이트
+        const nameInput = nameCell.querySelector("input");
+        const selectGroup = groupCell.querySelector("select");
+
+        const newName = nameInput.value.trim();
+        const newGroup = selectGroup.value;
+
+        if (newGroup && !platformGroupsCache[platformSelect.value].has(newGroup)) {
+          platformGroupsCache[platformSelect.value].add(newGroup);
+          alert(`새 그룹 "${newGroup}" 이(가) 자동 추가되었습니다.`);
+        }
+
+        const docRef = doc(db, platformSelect.value, docId);
+        try {
+          await updateDoc(docRef, {
+            name: newName,
+            group: newGroup,
+            lastEdited: getCurrentTimestamp()
+          });
+          alert("수정 완료");
+          searchBtn.click(); // 재검색해서 UI 갱신
+        } catch (err) {
+          alert("수정 실패: " + err.message);
+        }
+      }
+    }
+
+    // 삭제 버튼 클릭 핸들러
+    async function onDeleteClick(e) {
+      if (!confirm("정말 삭제하시겠습니까?")) return;
+
+      const btn = e.target;
+      const docId = btn.dataset.id;
+      const docRef = doc(db, platformSelect.value, docId);
+
+      try {
+        await deleteDoc(docRef);
+        alert("삭제 완료");
+        searchBtn.click(); // 재검색해서 UI 갱신
+      } catch (err) {
+        alert("삭제 실패: " + err.message);
+      }
+    }
+
+    // 초기 그룹 로드 (기본 instagram)
+    loadGroups("instagram");
+  </script>
+</body>
+</html>
