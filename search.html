@@ -2,56 +2,118 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>인스타그램 / 틱톡 검색 (아이디/이름 분리, 수정/삭제)</title>
   <style>
     body {
       font-family: sans-serif;
       padding: 20px;
-      max-width: 900px;
+      max-width: 1000px;
       margin: auto;
     }
+
     .nav {
       margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
     }
+
     .nav a {
-      margin-right: 15px;
       text-decoration: none;
       font-weight: bold;
       color: #333;
     }
+
     .nav a:hover {
       text-decoration: underline;
     }
+
     label, select, input, button {
-      font-size: 16px;
+      font-size: 1rem;
       margin-right: 10px;
       margin-bottom: 10px;
     }
+
+    input[type="text"], select {
+      max-width: 100%;
+      padding: 6px;
+    }
+
+    button {
+      padding: 6px 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      margin-top: 15px;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 15px;
+      min-width: 800px;
     }
+
     th, td {
       border: 1px solid #ccc;
       padding: 8px;
       text-align: left;
       vertical-align: middle;
+      font-size: 0.95rem;
     }
+
     a.link-icon {
-      font-size: 20px;
+      font-size: 1.2rem;
       text-decoration: none;
     }
-    button.editBtn, button.saveBtn, button.deleteBtn {
+
+    button.editBtn,
+    button.saveBtn,
+    button.deleteBtn {
       cursor: pointer;
       padding: 4px 8px;
       margin-right: 4px;
+      font-size: 0.9rem;
     }
-    input.editable, select.editable {
-      font-size: 14px;
+
+    input.editable,
+    select.editable {
+      font-size: 0.9rem;
       padding: 4px;
-      width: 90%;
+      width: 100%;
       box-sizing: border-box;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+      label, select, input, button {
+        font-size: 0.95rem;
+      }
+      .nav {
+        flex-direction: column;
+        gap: 5px;
+      }
+      th, td {
+        font-size: 0.85rem;
+        padding: 6px;
+      }
+      button.editBtn,
+      button.saveBtn,
+      button.deleteBtn {
+        font-size: 0.85rem;
+        padding: 4px 6px;
+      }
     }
   </style>
 </head>
@@ -65,43 +127,41 @@
 
   <h1>인스타그램 / 틱톡 검색 및 관리</h1>
 
-  <div>
+  <div class="form-group">
     <label for="platformSelect">플랫폼:</label>
     <select id="platformSelect">
       <option value="instagram">인스타그램</option>
       <option value="tiktok">틱톡</option>
     </select>
-  </div>
 
-  <div>
     <label for="groupSelect">그룹:</label>
     <select id="groupSelect" disabled>
       <option value="">-- 전체 그룹 --</option>
     </select>
-  </div>
 
-  <div>
     <label for="idNameInput">아이디 / 이름 검색:</label>
     <input type="text" id="idNameInput" placeholder="아이디 또는 이름 일부 입력" />
+
+    <button id="searchBtn">검색</button>
   </div>
 
-  <button id="searchBtn">검색</button>
-
-  <table id="resultTable" style="display:none;">
-    <thead>
-      <tr>
-        <th>아이디</th>
-        <th>이름</th>
-        <th>그룹</th>
-        <th>기록날짜</th>
-        <th>수정날짜</th>
-        <th>링크</th>
-        <th>수정</th>
-        <th>삭제</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div class="table-container">
+    <table id="resultTable" style="display:none;">
+      <thead>
+        <tr>
+          <th>아이디</th>
+          <th>이름</th>
+          <th>그룹</th>
+          <th>기록날짜</th>
+          <th>수정날짜</th>
+          <th>링크</th>
+          <th>수정</th>
+          <th>삭제</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
