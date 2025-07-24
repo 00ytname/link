@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>틱톡 데이터 출력</title>
+  <title>틱톡 데이터 출력 (페이지 단위)</title>
   <style>
     body {
       font-family: sans-serif;
@@ -10,50 +10,144 @@
       max-width: 900px;
       margin: auto;
     }
+    .one-line {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 14px;
+      max-width: 100%;
+    }
     .nav {
       margin-bottom: 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+    }
+    .nav > div:first-child {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
     }
     .nav a {
-      margin-right: 15px;
       text-decoration: none;
       font-weight: bold;
       color: #333;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background-color: #f0f0f0;
+      transition: background-color 0.2s;
     }
     .nav a:hover {
-      text-decoration: underline;
+      background-color: #ddd;
     }
     .group-add {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 8px;
+      margin-top: 10px;
     }
     .group-add input[type="text"] {
-      padding: 4px 8px;
+      padding: 6px 10px;
       font-size: 14px;
+    }
+    button {
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      font-weight: 600;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    select, input.editable {
+      font-size: 14px;
+      padding: 4px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 30px;
+      margin-bottom: 10px;
     }
     th, td {
       padding: 10px;
       border-bottom: 1px solid #ccc;
       text-align: left;
     }
-    button {
-      margin-left: 5px;
-    }
-    select, input.editable {
-      font-size: 14px;
-      padding: 4px;
-    }
     td .readonly-text {
       cursor: default;
       user-select: none;
+    }
+    #pagination {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    #pagination button {
+      font-size: 15px;
+      padding: 8px 16px;
+      font-weight: bold;
+    }
+    #pagination button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+    @media screen and (max-width: 768px) {
+      body {
+        padding: 15px;
+      }
+      .nav {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+      }
+      .nav > div:first-child {
+        justify-content: center;
+      }
+      .nav a {
+        flex: 1 1 45%;
+        text-align: center;
+      }
+      .group-add {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+      }
+      .group-add input[type="text"] {
+        width: 100%;
+        font-size: 16px;
+        padding: 10px 12px;
+      }
+      #addGroupBtn {
+        width: 100%;
+        font-size: 16px;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        font-size: 13px;
+      }
+      th, td {
+        padding: 8px;
+      }
+      button, select, input.editable {
+        font-size: 14px;
+        padding: 10px 12px;
+      }
+      #pagination {
+        flex-wrap: wrap;
+      }
+      #pagination button {
+        flex: 1 1 45%;
+        padding: 12px 0;
+        font-size: 16px;
+      }
     }
   </style>
 </head>
@@ -71,18 +165,21 @@
     </div>
   </div>
 
-  <h1>틱톡 데이터 출력</h1>
-  <label>
-    정렬 방식:
-    <select id="sortSelect">
-      <option value="latest">최신순</option>
-      <option value="id">아이디순</option>
-      <option value="name">이름순</option>
-      <option value="group">그룹순</option>
-      <option value="timestamp">기록날짜순</option>
-      <option value="lastEdited">수정날짜순</option>
-    </select>
-  </label>
+  <h1>틱톡 데이터 출력 (페이지 단위)</h1>
+
+  <label for="sortSelect">정렬 방식 선택:</label>
+  <select id="sortSelect" style="margin-bottom: 20px;">
+    <option value="timestamp_desc" selected>최신순 (timestamp 내림차순)</option>
+    <option value="timestamp_asc">오래된순 (timestamp 오름차순)</option>
+    <option value="id_asc">아이디순 (id 오름차순)</option>
+    <option value="id_desc">역아이디순 (id 내림차순)</option>
+    <option value="name_asc">이름순 (name 오름차순)</option>
+    <option value="name_desc">역이름순 (name 내림차순)</option>
+    <option value="group_asc">그룹순 (group 오름차순)</option>
+    <option value="group_desc">역그룹순 (group 내림차순)</option>
+    <option value="lastEdited_asc">수정순 (lastEdited 오름차순)</option>
+    <option value="lastEdited_desc">역수정순 (lastEdited 내림차순)</option>
+  </select>
 
   <table id="dataTable">
     <thead>
@@ -100,15 +197,25 @@
     <tbody></tbody>
   </table>
 
+  <div id="pagination">
+    <button id="prevBtn" disabled>이전</button>
+    <button id="nextBtn">다음</button>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
       getFirestore,
       collection,
+      query,
+      orderBy,
+      limit,
+      startAfter,
       getDocs,
-      doc,
+      addDoc,
       updateDoc,
-      deleteDoc
+      deleteDoc,
+      doc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -123,13 +230,21 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    const PAGE_SIZE = 30;
     let data = [];
     let groups = new Set();
-
     const tableBody = document.querySelector("#dataTable tbody");
-    const sortSelect = document.getElementById("sortSelect");
     const addGroupBtn = document.getElementById("addGroupBtn");
     const newGroupInput = document.getElementById("newGroupInput");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const sortSelect = document.getElementById("sortSelect");
+    const groupsCollection = collection(db, "tiktok_groups");
+
+    let pageStack = [];
+    let lastVisible = null;
+    let currentSortField = "timestamp";
+    let currentSortDirection = "desc";
 
     function formatDate(dateStr) {
       return dateStr || "-";
@@ -137,104 +252,79 @@
 
     function getCurrentTimestamp() {
       const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, "0");
-      const dd = String(now.getDate()).padStart(2, "0");
-      const hh = String(now.getHours()).padStart(2, "0");
-      const min = String(now.getMinutes()).padStart(2, "0");
-      const ss = String(now.getSeconds()).padStart(2, "0");
-      return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+      return now.toISOString().slice(0, 19).replace("T", " ");
     }
 
-    addGroupBtn.onclick = () => {
-      const newGroup = newGroupInput.value.trim();
-      if (!newGroup) {
-        alert("그룹명을 입력해주세요.");
-        return;
-      }
-      if (groups.has(newGroup)) {
-        alert("이미 존재하는 그룹명입니다.");
-        return;
-      }
-      groups.add(newGroup);
-      alert(`그룹 "${newGroup}" 이(가) 추가되었습니다.`);
-      newGroupInput.value = "";
-      renderTable(data);
-    };
-
-    async function loadData() {
-      const snapshot = await getDocs(collection(db, "tiktok"));
-      data = [];
+    async function loadGroups() {
       groups.clear();
-      snapshot.forEach((doc) => {
-        const item = { docId: doc.id, ...doc.data() };
-        data.push(item);
-        if (item.group) groups.add(item.group);
-      });
-      sortAndRender();
-    }
-
-    function sortAndRender() {
-      let sorted = [...data];
-      switch (sortSelect.value) {
-        case "latest":
-        case "timestamp":
-          sorted.sort(
-            (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-          );
-          break;
-        case "id":
-          sorted.sort((a, b) => a.id.localeCompare(b.id));
-          break;
-        case "name":
-          sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-          break;
-        case "group":
-          sorted.sort((a, b) => (a.group || "").localeCompare(b.group || ""));
-          break;
-        case "lastEdited":
-          sorted.sort(
-            (a, b) =>
-              new Date(b.lastEdited || 0).getTime() -
-              new Date(a.lastEdited || 0).getTime()
-          );
-          break;
+      try {
+        const snapshot = await getDocs(groupsCollection);
+        snapshot.forEach(docSnap => {
+          const g = docSnap.data().name;
+          if (g) groups.add(g);
+        });
+      } catch (e) {
+        alert("그룹 목록 불러오기 실패: " + e);
       }
-      renderTable(sorted);
     }
 
     function createGroupSelect(selectedGroup, docId) {
       const select = document.createElement("select");
       select.dataset.id = docId;
-
       const emptyOption = document.createElement("option");
       emptyOption.value = "";
       emptyOption.textContent = "(없음)";
       if (!selectedGroup) emptyOption.selected = true;
       select.appendChild(emptyOption);
-
-      groups.forEach((g) => {
+      groups.forEach(g => {
         const option = document.createElement("option");
         option.value = g;
         option.textContent = g;
         if (g === selectedGroup) option.selected = true;
         select.appendChild(option);
       });
-
       return select;
+    }
+
+    async function loadPage(cursor = null) {
+      const { field, dir } = { field: currentSortField, dir: currentSortDirection };
+      let q = cursor
+        ? query(collection(db, "tiktok"), orderBy(field, dir), startAfter(cursor), limit(PAGE_SIZE))
+        : query(collection(db, "tiktok"), orderBy(field, dir), limit(PAGE_SIZE));
+      try {
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) {
+          alert("더 이상 데이터가 없습니다.");
+          nextBtn.disabled = true;
+          return;
+        }
+
+        data = [];
+        snapshot.forEach(docSnap => {
+          const item = { docId: docSnap.id, ...docSnap.data() };
+          data.push(item);
+        });
+
+        lastVisible = snapshot.docs[snapshot.docs.length - 1];
+        renderTable(data);
+
+        prevBtn.disabled = pageStack.length === 0;
+        nextBtn.disabled = snapshot.size < PAGE_SIZE;
+      } catch (e) {
+        alert("데이터 로드 실패: " + e);
+      }
     }
 
     function renderTable(list) {
       tableBody.innerHTML = "";
-      list.forEach((item) => {
+      list.forEach(item => {
         const tr = document.createElement("tr");
-
         tr.innerHTML = `
-          <td class="id-cell">${item.id}</td>
-          <td class="name-cell readonly-text" data-id="${item.docId}">${item.name || ""}</td>
-          <td class="group-cell readonly-text" data-id="${item.docId}">${item.group || ""}</td>
-          <td>${formatDate(item.timestamp)}</td>
-          <td>${formatDate(item.lastEdited)}</td>
+          <td class="one-line">${item.id || ""}</td>
+          <td class="one-line name-cell readonly-text" data-id="${item.docId}">${item.name || ""}</td>
+          <td class="one-line group-cell readonly-text" data-id="${item.docId}">${item.group || ""}</td>
+          <td class="one-line">${formatDate(item.timestamp)}</td>
+          <td class="one-line">${formatDate(item.lastEdited)}</td>
           <td><a href="${item.link}" target="_blank" rel="noopener noreferrer">📎</a></td>
           <td><button class="editBtn" data-id="${item.docId}">✏️ 수정</button></td>
           <td><button class="deleteBtn" data-id="${item.docId}">❌ 삭제</button></td>
@@ -242,8 +332,8 @@
         tableBody.appendChild(tr);
       });
 
-      document.querySelectorAll(".editBtn").forEach((btn) => {
-        btn.onclick = (e) => {
+      document.querySelectorAll(".editBtn").forEach(btn => {
+        btn.onclick = async (e) => {
           const id = e.target.dataset.id;
           const tr = e.target.closest("tr");
           const nameCell = tr.querySelector(".name-cell");
@@ -251,7 +341,6 @@
           const editBtn = e.target;
 
           const isEditing = nameCell.querySelector("input") !== null;
-
           if (!isEditing) {
             const currentName = nameCell.textContent.trim();
             const currentGroup = groupCell.textContent.trim();
@@ -263,51 +352,45 @@
             nameInput.dataset.id = id;
 
             const groupSelect = createGroupSelect(currentGroup, id);
-
             nameCell.innerHTML = "";
             nameCell.appendChild(nameInput);
-            nameCell.classList.remove("readonly-text");
-
             groupCell.innerHTML = "";
             groupCell.appendChild(groupSelect);
-            groupCell.classList.remove("readonly-text");
-
             editBtn.textContent = "💾 저장";
           } else {
             const nameInput = nameCell.querySelector("input");
             const groupSelect = groupCell.querySelector("select");
-
             const newName = nameInput.value.trim();
             const newGroup = groupSelect.value;
 
             if (newGroup && !groups.has(newGroup)) {
               groups.add(newGroup);
-              alert(`새 그룹 "${newGroup}" 이(가) 자동 추가되었습니다.`);
+              alert(`새 그룹 "${newGroup}" 자동 추가됨.\n(데이터베이스에는 저장되지 않음!)`);
             }
 
-            updateDoc(doc(db, "tiktok", id), {
-              name: newName,
-              group: newGroup,
-              lastEdited: getCurrentTimestamp()
-            })
-              .then(() => {
-                loadData();
-              })
-              .catch((e) => alert("수정 실패: " + e));
-
+            try {
+              await updateDoc(doc(db, "tiktok", id), {
+                name: newName,
+                group: newGroup,
+                lastEdited: getCurrentTimestamp()
+              });
+              await loadPage(pageStack.length > 0 ? pageStack[pageStack.length - 1] : null);
+            } catch (e) {
+              alert("수정 실패: " + e);
+            }
             editBtn.textContent = "✏️ 수정";
           }
         };
       });
 
-      document.querySelectorAll(".deleteBtn").forEach((btn) => {
+      document.querySelectorAll(".deleteBtn").forEach(btn => {
         btn.onclick = async (e) => {
           if (!confirm("정말 삭제하시겠습니까?")) return;
           const id = e.target.dataset.id;
           try {
             await deleteDoc(doc(db, "tiktok", id));
             alert("삭제 완료");
-            await loadData();
+            await loadPage(pageStack.length > 0 ? pageStack[pageStack.length - 1] : null);
           } catch (error) {
             alert("삭제 실패: " + error);
           }
@@ -315,9 +398,48 @@
       });
     }
 
-    sortSelect.addEventListener("change", sortAndRender);
+    sortSelect.onchange = () => {
+      const parsed = sortSelect.value.split("_");
+      currentSortField = parsed[0];
+      currentSortDirection = parsed[1];
+      pageStack = [];
+      lastVisible = null;
+      loadPage();
+    };
 
-    loadData();
+    nextBtn.onclick = () => {
+      if (lastVisible) {
+        pageStack.push(lastVisible);
+        loadPage(lastVisible);
+      }
+    };
+
+    prevBtn.onclick = () => {
+      if (pageStack.length === 0) return;
+      pageStack.pop();
+      const cursor = pageStack.length > 0 ? pageStack[pageStack.length - 1] : null;
+      loadPage(cursor);
+    };
+
+    addGroupBtn.onclick = async () => {
+      const newGroup = newGroupInput.value.trim();
+      if (!newGroup) return alert("그룹명을 입력해주세요.");
+      if (groups.has(newGroup)) return alert("이미 존재하는 그룹명입니다.");
+      try {
+        await addDoc(groupsCollection, { name: newGroup });
+        groups.add(newGroup);
+        alert(`그룹 "${newGroup}" 이(가) 추가되었습니다.`);
+        newGroupInput.value = "";
+        renderTable(data);
+      } catch (e) {
+        alert("그룹 추가 실패: " + e);
+      }
+    };
+
+    (async () => {
+      await loadGroups();
+      await loadPage();
+    })();
   </script>
 </body>
 </html>
