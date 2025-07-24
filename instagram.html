@@ -55,6 +55,142 @@
       cursor: default;
       user-select: none;
     }
+
+    @media screen and (max-width: 768px) {
+    body {
+      padding: 10px;
+    }
+
+    .nav {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .group-add {
+      width: 100%;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .group-add input[type="text"] {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    table {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 6px;
+    }
+
+    select, input.editable {
+      font-size: 13px;
+    }
+
+    button {
+      font-size: 13px;
+      padding: 4px 6px;
+    }
+  }
+  @media screen and (max-width: 768px) {
+  body {
+    padding: 10px;
+  }
+
+  /* 네비게이션 세로 정렬 및 공간 확보 */
+  .nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .nav > div:first-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .nav a {
+    padding: 8px 12px;
+    font-size: 15px;
+    background-color: #f0f0f0;
+    border-radius: 6px;
+    color: #333;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+  }
+
+  .nav a:hover {
+    background-color: #ddd;
+    text-decoration: none;
+  }
+
+  /* 그룹 추가 박스 */
+  .group-add {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .group-add input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+
+  #addGroupBtn {
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 6px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgb(0 123 255 / 0.5);
+    transition: background-color 0.3s ease;
+  }
+  #addGroupBtn:hover {
+    background-color: #0056b3;
+  }
+
+  /* 테이블 가로 스크롤 및 글자 크기 축소 */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+  }
+
+  th, td {
+    padding: 8px 10px;
+  }
+
+  /* 버튼 크기 키우기 */
+  button {
+    font-size: 14px;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+
+  select, input.editable {
+    font-size: 14px;
+    padding: 6px 8px;
+  }
+}
+
+
   </style>
 </head>
 <body>
