@@ -2,195 +2,154 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>인스타그램 데이터 출력</title>
+  <title>인스타그램 데이터 출력 (페이징 + 정렬)</title>
   <style>
+  body {
+    font-family: sans-serif;
+    padding: 20px;
+    max-width: 900px;
+    margin: auto;
+  }
+  .one-line {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 14px;
+    max-width: 100%;
+  }
+  .nav {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .nav > div:first-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .nav a {
+    text-decoration: none;
+    font-weight: bold;
+    color: #333;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background-color: #f0f0f0;
+    transition: background-color 0.2s;
+  }
+  .nav a:hover {
+    background-color: #ddd;
+  }
+  .group-add {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .group-add input[type="text"] {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+  button {
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    font-weight: 600;
+    transition: background-color 0.3s;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+  select, input.editable {
+    font-size: 14px;
+    padding: 4px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+  th, td {
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+    text-align: left;
+  }
+  td .readonly-text {
+    cursor: default;
+    user-select: none;
+  }
+  #pagination {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  #pagination button {
+    font-size: 15px;
+    padding: 8px 16px;
+    font-weight: bold;
+  }
+  #pagination button:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+  }
+  /* 모바일 대응 */
+  @media screen and (max-width: 768px) {
     body {
-      font-family: sans-serif;
-      padding: 20px;
-      max-width: 900px;
-      margin: auto;
+      padding: 15px;
     }
     .nav {
-      margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 15px;
+    }
+    .nav > div:first-child {
+      justify-content: center;
     }
     .nav a {
-      margin-right: 15px;
-      text-decoration: none;
-      font-weight: bold;
-      color: #333;
-    }
-    .nav a:hover {
-      text-decoration: underline;
+      flex: 1 1 45%;
+      text-align: center;
     }
     .group-add {
-      display: flex;
-      align-items: center;
-      gap: 5px;
+      flex-direction: column;
+      align-items: stretch;
+      width: 100%;
     }
     .group-add input[type="text"] {
-      padding: 4px 8px;
-      font-size: 14px;
-    }
-    table {
       width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 30px;
+      font-size: 16px;
+      padding: 10px 12px;
     }
-    th, td {
-      padding: 10px;
-      border-bottom: 1px solid #ccc;
-      text-align: left;
-    }
-    button {
-      margin-left: 5px;
-    }
-    select, input.editable {
-      font-size: 14px;
-      padding: 4px;
-    }
-    td .readonly-text {
-      cursor: default;
-      user-select: none;
-    }
-
-    @media screen and (max-width: 768px) {
-    body {
-      padding: 10px;
-    }
-
-    .nav {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 10px;
-    }
-
-    .group-add {
+    #addGroupBtn {
       width: 100%;
-      flex-direction: column;
-      align-items: flex-start;
+      font-size: 16px;
     }
-
-    .group-add input[type="text"] {
-      width: 100%;
-      box-sizing: border-box;
-    }
-
     table {
       display: block;
       overflow-x: auto;
       white-space: nowrap;
       font-size: 13px;
     }
-
     th, td {
-      padding: 6px;
+      padding: 8px;
     }
-
-    select, input.editable {
-      font-size: 13px;
+    button, select, input.editable {
+      font-size: 14px;
+      padding: 10px 12px;
     }
-
-    button {
-      font-size: 13px;
-      padding: 4px 6px;
+    #pagination {
+      flex-wrap: wrap;
+    }
+    #pagination button {
+      flex: 1 1 45%;
+      padding: 12px 0;
+      font-size: 16px;
     }
   }
-  @media screen and (max-width: 768px) {
-  body {
-    padding: 10px;
-  }
-
-  /* 네비게이션 세로 정렬 및 공간 확보 */
-  .nav {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .nav > div:first-child {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .nav a {
-    padding: 8px 12px;
-    font-size: 15px;
-    background-color: #f0f0f0;
-    border-radius: 6px;
-    color: #333;
-    font-weight: 600;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
-  }
-
-  .nav a:hover {
-    background-color: #ddd;
-    text-decoration: none;
-  }
-
-  /* 그룹 추가 박스 */
-  .group-add {
-    width: 100%;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-
-  .group-add input[type="text"] {
-    width: 100%;
-    box-sizing: border-box;
-    font-size: 15px;
-    padding: 10px 12px;
-  }
-
-  #addGroupBtn {
-    padding: 10px;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 6px;
-    border: none;
-    background-color: #007bff;
-    color: white;
-    font-weight: bold;
-    box-shadow: 0 2px 5px rgb(0 123 255 / 0.5);
-    transition: background-color 0.3s ease;
-  }
-  #addGroupBtn:hover {
-    background-color: #0056b3;
-  }
-
-  /* 테이블 가로 스크롤 및 글자 크기 축소 */
-  table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-    font-size: 14px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-  }
-
-  th, td {
-    padding: 8px 10px;
-  }
-
-  /* 버튼 크기 키우기 */
-  button {
-    font-size: 14px;
-    padding: 6px 10px;
-    cursor: pointer;
-    border-radius: 5px;
-  }
-
-  select, input.editable {
-    font-size: 14px;
-    padding: 6px 8px;
-  }
-}
-
-
   </style>
 </head>
 <body>
@@ -207,18 +166,23 @@
     </div>
   </div>
 
-  <h1>인스타그램 데이터 출력</h1>
-  <label>
-    정렬 방식:
-    <select id="sortSelect">
-      <option value="latest">최신순</option>
-      <option value="id">아이디순</option>
-      <option value="name">이름순</option>
-      <option value="group">그룹순</option>
-      <option value="timestamp">기록날짜순</option>
-      <option value="lastEdited">수정날짜순</option>
-    </select>
-  </label>
+  <h1>인스타그램 데이터 출력 (페이지 단위)</h1>
+
+  <label for="sortSelect">정렬 방식 선택:</label>
+  <select id="sortSelect" style="margin-bottom: 20px;">
+    <option value="timestamp_desc" selected>최신순 (timestamp 내림차순)</option>
+    <option value="timestamp_asc">오래된순 (timestamp 오름차순)</option>
+    <option value="id_asc">아이디순 (id 오름차순)</option>
+    <option value="id_desc">역아이디순 (id 내림차순)</option>
+    <option value="name_asc">이름순 (name 오름차순)</option>
+    <option value="name_desc">역이름순 (name 내림차순)</option>
+    <option value="group_asc">그룹순 (group 오름차순)</option>
+    <option value="group_desc">역그룹순 (group 내림차순)</option>
+    <option value="timestamp_asc">날짜순 (timestamp 오름차순)</option>
+    <option value="timestamp_desc">역날짜순 (timestamp 내림차순)</option>
+    <option value="lastEdited_asc">수정순 (lastEdited 오름차순)</option>
+    <option value="lastEdited_desc">역수정순 (lastEdited 내림차순)</option>
+  </select>
 
   <table id="dataTable">
     <thead>
@@ -236,15 +200,25 @@
     <tbody></tbody>
   </table>
 
+  <div id="pagination">
+    <button id="prevBtn" disabled>이전</button>
+    <button id="nextBtn">다음</button>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
       getFirestore,
       collection,
+      query,
+      orderBy,
+      limit,
+      startAfter,
       getDocs,
-      doc,
+      addDoc,
       updateDoc,
-      deleteDoc
+      deleteDoc,
+      doc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -259,13 +233,28 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    const PAGE_SIZE = 30;
+
     let data = [];
     let groups = new Set();
 
     const tableBody = document.querySelector("#dataTable tbody");
-    const sortSelect = document.getElementById("sortSelect");
     const addGroupBtn = document.getElementById("addGroupBtn");
     const newGroupInput = document.getElementById("newGroupInput");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const sortSelect = document.getElementById("sortSelect");
+
+    // 페이징을 위한 커서 스택
+    let pageStack = [];
+    let lastVisible = null;
+
+    // 정렬 관련 현재 상태 변수
+    let currentSortField = "timestamp";
+    let currentSortDirection = "desc";
+
+    // 인스타그램 전용 그룹 컬렉션 참조
+    const groupsCollection = collection(db, "instagram_groups");
 
     function formatDate(dateStr) {
       return dateStr || "-";
@@ -282,98 +271,151 @@
       return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
     }
 
-    // 그룹 추가 버튼 이벤트
-    addGroupBtn.onclick = () => {
-      const newGroup = newGroupInput.value.trim();
-      if (!newGroup) {
-        alert("그룹명을 입력해주세요.");
-        return;
-      }
-      if (groups.has(newGroup)) {
-        alert("이미 존재하는 그룹명입니다.");
-        return;
-      }
-      groups.add(newGroup);
-      alert(`그룹 "${newGroup}" 이(가) 추가되었습니다.`);
-      newGroupInput.value = "";
-      renderTable(data); // 다시 렌더링해서 드롭다운에 반영
-    };
-
-    async function loadData() {
-      const snapshot = await getDocs(collection(db, "instagram"));
-      data = [];
+    // Firestore에서 그룹 목록 불러오기
+    async function loadGroups() {
       groups.clear();
-      snapshot.forEach((doc) => {
-        const item = { docId: doc.id, ...doc.data() };
-        data.push(item);
-        if (item.group) groups.add(item.group);
-      });
-      sortAndRender();
+      try {
+        const snapshot = await getDocs(groupsCollection);
+        snapshot.forEach(docSnap => {
+          const g = docSnap.data().name;
+          if (g) groups.add(g);
+        });
+      } catch (e) {
+        alert("그룹 목록 불러오기 실패: " + e);
+      }
     }
 
-    function sortAndRender() {
-      let sorted = [...data];
-      switch (sortSelect.value) {
-        case "latest":
-        case "timestamp":
-          sorted.sort(
-            (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-          );
-          break;
-        case "id":
-          sorted.sort((a, b) => a.id.localeCompare(b.id));
-          break;
-        case "name":
-          sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-          break;
-        case "group":
-          sorted.sort((a, b) => (a.group || "").localeCompare(b.group || ""));
-          break;
-        case "lastEdited":
-          sorted.sort(
-            (a, b) =>
-              new Date(b.lastEdited || 0).getTime() -
-              new Date(a.lastEdited || 0).getTime()
-          );
-          break;
+    // 정렬 select 값에서 필드와 방향 추출
+    function parseSortValue(value) {
+      const [field, dir] = value.split("_");
+      return { field, dir };
+    }
+
+    // 빈 값 여부 체크 함수 (공백도 빈칸으로 처리)
+    function isEmpty(v) {
+      return v === null || v === undefined || (typeof v === "string" && v.trim() === "");
+    }
+
+    // Firestore에서 한 페이지 데이터 로드
+    async function loadPage(cursor = null) {
+      // 정렬 필드와 방향 업데이트
+      const { field, dir } = { field: currentSortField, dir: currentSortDirection };
+
+      let q;
+      if (cursor) {
+        q = query(
+          collection(db, "instagram"),
+          orderBy(field, dir),
+          startAfter(cursor),
+          limit(PAGE_SIZE)
+        );
+      } else {
+        q = query(
+          collection(db, "instagram"),
+          orderBy(field, dir),
+          limit(PAGE_SIZE)
+        );
       }
 
-      renderTable(sorted);
+      try {
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+          alert("더 이상 데이터가 없습니다.");
+          nextBtn.disabled = true;
+          return;
+        }
+
+        data = [];
+
+        snapshot.forEach(docSnap => {
+          const item = { docId: docSnap.id, ...docSnap.data() };
+          data.push(item);
+        });
+
+        // 클라이언트 측에서 추가 정렬 및 빈값 처리
+        data.sort((a, b) => {
+          if (currentSortField === "name" || currentSortField === "group") {
+            const aVal = isEmpty(a[currentSortField])
+              ? (currentSortDirection === "asc" ? "zzz" : "")
+              : a[currentSortField];
+            const bVal = isEmpty(b[currentSortField])
+              ? (currentSortDirection === "asc" ? "zzz" : "")
+              : b[currentSortField];
+            return currentSortDirection === "asc"
+              ? aVal.localeCompare(bVal)
+              : bVal.localeCompare(aVal);
+          }
+
+          if (currentSortField === "id") {
+            const aVal = a.id || "";
+            const bVal = b.id || "";
+            return currentSortDirection === "asc"
+              ? aVal.localeCompare(bVal)
+              : bVal.localeCompare(aVal);
+          }
+
+          if (currentSortField === "timestamp") {
+            const aVal = a.timestamp || "";
+            const bVal = b.timestamp || "";
+            return currentSortDirection === "asc"
+              ? aVal.localeCompare(bVal)
+              : bVal.localeCompare(aVal);
+          }
+
+          if (currentSortField === "lastEdited") {
+            const aVal = a.lastEdited || "";
+            const bVal = b.lastEdited || "";
+            return currentSortDirection === "asc"
+              ? aVal.localeCompare(bVal)
+              : bVal.localeCompare(aVal);
+          }
+
+          return 0;
+        });
+
+        lastVisible = snapshot.docs[snapshot.docs.length - 1];
+        renderTable(data);
+
+        prevBtn.disabled = pageStack.length === 0;
+        nextBtn.disabled = snapshot.size < PAGE_SIZE;
+      } catch (e) {
+        alert("데이터 로드 실패: " + e);
+      }
     }
 
+    // 그룹 선택 select 생성
     function createGroupSelect(selectedGroup, docId) {
       const select = document.createElement("select");
       select.dataset.id = docId;
-      groups.forEach((g) => {
+
+      const emptyOption = document.createElement("option");
+      emptyOption.value = "";
+      emptyOption.textContent = "(없음)";
+      if (!selectedGroup) emptyOption.selected = true;
+      select.appendChild(emptyOption);
+
+      groups.forEach(g => {
         const option = document.createElement("option");
         option.value = g;
         option.textContent = g;
         if (g === selectedGroup) option.selected = true;
         select.appendChild(option);
       });
-      // 빈값 선택 옵션도 추가
-      const emptyOption = document.createElement("option");
-      emptyOption.value = "";
-      emptyOption.textContent = "(없음)";
-      if (!selectedGroup) emptyOption.selected = true;
-      select.prepend(emptyOption);
       return select;
     }
 
+    // 테이블 렌더링
     function renderTable(list) {
       tableBody.innerHTML = "";
-      list.forEach((item) => {
+      list.forEach(item => {
         const tr = document.createElement("tr");
-
-        // 기본은 텍스트 보여주기 (readonly)
-        // 수정 버튼 누르면 input/select로 변환(토글)
-
         tr.innerHTML = `
-          <td class="id-cell">${item.id}</td>
-          <td class="name-cell readonly-text" data-id="${item.docId}">${item.name || ""}</td>
-          <td class="group-cell readonly-text" data-id="${item.docId}">${item.group || ""}</td>
-          <td>${formatDate(item.timestamp)}</td>
-          <td>${formatDate(item.lastEdited)}</td>
+          <td class="one-line">${item.id || ""}</td>
+          <td class="one-line name-cell readonly-text" data-id="${item.docId}">${item.name || ""}</td>
+          <td class="one-line group-cell readonly-text" data-id="${item.docId}">${item.group || ""}</td>
+          <td class="one-line">${formatDate(item.timestamp)}</td>
+          <td class="one-line">${formatDate(item.lastEdited)}</td>
           <td><a href="${item.link}" target="_blank" rel="noopener noreferrer">📎</a></td>
           <td><button class="editBtn" data-id="${item.docId}">✏️ 수정</button></td>
           <td><button class="deleteBtn" data-id="${item.docId}">❌ 삭제</button></td>
@@ -381,31 +423,28 @@
         tableBody.appendChild(tr);
       });
 
-      // 수정 버튼 이벤트 등록
-      document.querySelectorAll(".editBtn").forEach((btn) => {
-        btn.onclick = (e) => {
+      // 수정 버튼 이벤트
+      document.querySelectorAll(".editBtn").forEach(btn => {
+        btn.onclick = async (e) => {
           const id = e.target.dataset.id;
           const tr = e.target.closest("tr");
           const nameCell = tr.querySelector(".name-cell");
           const groupCell = tr.querySelector(".group-cell");
           const editBtn = e.target;
 
-          // 수정 모드인지 판단 (input/select 존재 여부)
           const isEditing = nameCell.querySelector("input") !== null;
 
           if (!isEditing) {
-            // 수정 모드로 전환 → 텍스트 -> input/select 변경
+            // 수정 모드 전환
             const currentName = nameCell.textContent.trim();
             const currentGroup = groupCell.textContent.trim();
 
-            // 이름 input 박스 생성
             const nameInput = document.createElement("input");
             nameInput.type = "text";
             nameInput.className = "editable";
             nameInput.value = currentName;
             nameInput.dataset.id = id;
 
-            // 그룹 select 박스 생성
             const groupSelect = createGroupSelect(currentGroup, id);
 
             nameCell.innerHTML = "";
@@ -418,7 +457,7 @@
 
             editBtn.textContent = "💾 저장";
           } else {
-            // 저장 모드 → Firebase 업데이트 & input/select -> 텍스트 전환
+            // 저장 모드
             const nameInput = nameCell.querySelector("input");
             const groupSelect = groupCell.querySelector("select");
 
@@ -427,35 +466,34 @@
 
             if (newGroup && !groups.has(newGroup)) {
               groups.add(newGroup);
-              alert(`새 그룹 "${newGroup}" 이(가) 자동 추가되었습니다.`);
+              alert(`새 그룹 "${newGroup}" 이(가) 자동 추가되었습니다.\n(데이터베이스에 저장되지 않았으니 그룹 추가 버튼으로 따로 저장하세요)`);
             }
 
-            updateDoc(doc(db, "instagram", id), {
-              name: newName,
-              group: newGroup,
-              lastEdited: getCurrentTimestamp()
-            })
-              .then(() => {
-                // 데이터 갱신 및 테이블 다시 그리기
-                loadData();
-              })
-              .catch((e) => alert("수정 실패: " + e));
+            try {
+              await updateDoc(doc(db, "instagram", id), {
+                name: newName,
+                group: newGroup,
+                lastEdited: getCurrentTimestamp()
+              });
+              await loadPage(pageStack.length > 0 ? pageStack[pageStack.length - 1] : null);
+            } catch (e) {
+              alert("수정 실패: " + e);
+            }
 
-            // 즉시 버튼 텍스트 복구(로딩 중엔 변경X)
             editBtn.textContent = "✏️ 수정";
           }
         };
       });
 
-      // 삭제 버튼 이벤트 등록
-      document.querySelectorAll(".deleteBtn").forEach((btn) => {
+      // 삭제 버튼 이벤트
+      document.querySelectorAll(".deleteBtn").forEach(btn => {
         btn.onclick = async (e) => {
           if (!confirm("정말 삭제하시겠습니까?")) return;
           const id = e.target.dataset.id;
           try {
             await deleteDoc(doc(db, "instagram", id));
             alert("삭제 완료");
-            await loadData();
+            await loadPage(pageStack.length > 0 ? pageStack[pageStack.length - 1] : null);
           } catch (error) {
             alert("삭제 실패: " + error);
           }
@@ -463,9 +501,62 @@
       });
     }
 
-    sortSelect.addEventListener("change", sortAndRender);
+    // 페이지 처음 로드
+    (async () => {
+      await loadGroups();
+      await loadPage();
+    })();
 
-    loadData();
+    // 정렬 변경 이벤트
+    sortSelect.onchange = () => {
+      const val = sortSelect.value;
+      const parsed = parseSortValue(val);
+      currentSortField = parsed.field;
+      currentSortDirection = parsed.dir;
+
+      pageStack = [];
+      lastVisible = null;
+      loadPage();
+    };
+
+    // 다음 버튼 클릭
+    nextBtn.onclick = () => {
+      if (lastVisible) {
+        pageStack.push(lastVisible);
+        loadPage(lastVisible);
+      }
+    };
+
+    // 이전 버튼 클릭
+    prevBtn.onclick = () => {
+      if (pageStack.length === 0) return;
+      pageStack.pop();
+      const cursor = pageStack.length > 0 ? pageStack[pageStack.length - 1] : null;
+      loadPage(cursor);
+    };
+
+    // 그룹 추가 버튼 클릭
+    addGroupBtn.onclick = async () => {
+      const newGroup = newGroupInput.value.trim();
+      if (!newGroup) {
+        alert("그룹명을 입력해주세요.");
+        return;
+      }
+      if (groups.has(newGroup)) {
+        alert("이미 존재하는 그룹명입니다.");
+        return;
+      }
+
+      try {
+        await addDoc(groupsCollection, { name: newGroup });
+        groups.add(newGroup);
+        alert(`그룹 "${newGroup}" 이(가) 추가되었습니다.`);
+        newGroupInput.value = "";
+        renderTable(data);
+      } catch (e) {
+        alert("그룹 추가 실패: " + e);
+      }
+    };
   </script>
 </body>
 </html>
