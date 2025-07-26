@@ -1,455 +1,681 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>인스타그램 / 틱톡 검색 (아이디/이름 분리, 수정/삭제)</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      max-width: 1000px;
-      margin: auto;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>인스타그램 / 틱톡 검색 및 관리 (별점 필터 포함)</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+      Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    padding: 15px 10px;
+    max-width: 100vw;
+    margin: auto;
+    background-color: #f9f9f9;
+    color: #222;
+  }
+  .nav {
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .nav a {
+    font-weight: 600;
+    color: #007bff;
+    text-decoration: none;
+    font-size: 1rem;
+    padding: 6px 12px;
+    border-radius: 5px;
+    background: #e9f0ff;
+    user-select: none;
+    transition: background-color 0.3s, color 0.3s;
+  }
+  .nav a:hover {
+    background: #c4d9ff;
+    color: #004aaf;
+    text-decoration: underline;
+  }
 
+  .form-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 15px;
+    align-items: center;
+    margin-bottom: 10px;
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.1);
+  }
+  label {
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  select, input[type="text"] {
+    flex-grow: 1;
+    max-width: 180px; /* 별점 select 고려해 약간 축소 */
+    font-size: 1rem;
+    padding: 8px 10px;
+    border: 1px solid #bbb;
+    border-radius: 5px;
+    outline-offset: 2px;
+    outline-color: transparent;
+    transition: outline-color 0.3s;
+  }
+  select:focus, input[type="text"]:focus {
+    outline-color: #007bff;
+    border-color: #007bff;
+  }
+  button {
+    font-size: 1rem;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    user-select: none;
+    transition: background-color 0.3s;
+  }
+  button:hover,
+  button:focus {
+    background-color: #0056b3;
+    outline: none;
+  }
+
+  .table-container {
+    overflow-x: auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 6px rgb(0 0 0 / 0.12);
+    margin-top: 15px;
+    padding: 0;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 750px; /* 축소해서 스크롤 부담 완화 */
+    font-size: 0.95rem;
+  }
+  thead {
+    background-color: #007bff;
+    color: #fff;
+    font-weight: 600;
+  }
+  th, td {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    vertical-align: middle;
+    white-space: nowrap;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: relative;
+  }
+  th:nth-last-child(-n+2),
+  td:nth-last-child(-n+2) {
+    max-width: 120px;
+    text-align: center;
+  }
+
+  /* Action buttons */
+  button.editBtn,
+  button.deleteBtn {
+    font-size: 0.95rem;
+    padding: 6px 10px;
+    margin-right: 4px;
+    border-radius: 5px;
+  }
+  button.editBtn {
+    background-color: #ffc107;
+    color: #222;
+    border: none;
+  }
+  button.editBtn:hover {
+    background-color: #e0a800;
+    color: #fff;
+  }
+  button.deleteBtn {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+  }
+  button.deleteBtn:hover {
+    background-color: #a71d2a;
+  }
+
+  /* Inputs inside table */
+  input.editable,
+  select.editable {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 1rem; /* 키움 */
+    padding: 8px 10px; /* 충분한 패딩 */
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    outline-offset: 2px;
+    outline-color: transparent;
+    transition: outline-color 0.3s;
+  }
+  input.editable:focus, select.editable:focus {
+    outline-color: #007bff;
+    border-color: #007bff;
+  }
+
+  /* Star rating */
+  .star-container {
+    user-select: none;
+    font-size: 1.4rem;
+    color: gold;
+    display: inline-block;
+    cursor: default;
+  }
+  .star-container .star {
+    cursor: pointer;
+    display: inline-block;
+    color: gold;
+    transition: color 0.2s;
+    user-select: none;
+  }
+  .star-container .star.inactive {
+    color: #ccc;
+  }
+  .star-container .star:hover,
+  .star-container .star:hover ~ .star {
+    color: #ffdb58;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
     .nav {
-      margin-bottom: 20px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      gap: 6px;
     }
-
-    .nav a {
-      text-decoration: none;
-      font-weight: bold;
-      color: #333;
-    }
-
-    .nav a:hover {
-      text-decoration: underline;
-    }
-
-    label, select, input, button {
-      font-size: 1rem;
-      margin-right: 10px;
-      margin-bottom: 10px;
-    }
-
-    input[type="text"], select {
-      max-width: 100%;
-      padding: 6px;
-    }
-
-    button {
-      padding: 6px 12px;
-    }
-
-    .form-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .table-container {
-      overflow-x: auto;
-      margin-top: 15px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 800px;
-    }
-
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-      vertical-align: middle;
+    label, select, input[type="text"], button {
       font-size: 0.95rem;
+      max-width: 140px;
     }
-
-    a.link-icon {
-      font-size: 1.2rem;
-      text-decoration: none;
+    button {
+      padding: 7px 12px;
     }
-
-    button.editBtn,
-    button.saveBtn,
-    button.deleteBtn {
-      cursor: pointer;
-      padding: 4px 8px;
-      margin-right: 4px;
+    table {
+      min-width: 100%;
       font-size: 0.9rem;
     }
-
+    th, td {
+      padding: 8px 10px;
+      max-width: 140px;
+    }
+    .star-container {
+      font-size: 1.2rem;
+    }
+    button.editBtn,
+    button.deleteBtn {
+      font-size: 0.9rem;
+      padding: 5px 8px;
+    }
     input.editable,
     select.editable {
-      font-size: 0.9rem;
-      padding: 4px;
-      width: 100%;
+      font-size: 1rem;
+      padding: 6px 8px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .nav {
+      flex-wrap: wrap;
+    }
+    .form-group {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    label, select, input[type="text"], button {
+      max-width: 100%;
+      font-size: 1rem;
+      padding: 10px;
       box-sizing: border-box;
     }
-
-    @media (max-width: 600px) {
-      body {
-        padding: 15px;
-      }
-      label, select, input, button {
-        font-size: 0.95rem;
-      }
-      .nav {
-        flex-direction: column;
-        gap: 5px;
-      }
-      th, td {
-        font-size: 0.85rem;
-        padding: 6px;
-      }
-      button.editBtn,
-      button.saveBtn,
-      button.deleteBtn {
-        font-size: 0.85rem;
-        padding: 4px 6px;
-      }
+    button {
+      width: 100%;
     }
-  </style>
+    table {
+      min-width: unset;
+      font-size: 0.95rem;
+    }
+    th, td {
+      white-space: nowrap;
+      max-width: 120px;
+      padding: 8px 6px;
+    }
+    .star-container {
+      font-size: 1.1rem;
+    }
+    button.editBtn,
+    button.deleteBtn {
+      font-size: 0.9rem;
+      padding: 4px 6px;
+    }
+    input.editable,
+    select.editable {
+      font-size: 1rem;
+      padding: 7px 8px;
+    }
+  }
+</style>
 </head>
 <body>
-  <div class="nav">
+  <div class="nav" role="navigation" aria-label="Main navigation">
     <a href="index.html">입력</a>
     <a href="instagram.html">인스타그램</a>
     <a href="tiktok.html">틱톡</a>
     <a href="search.html">검색</a>
   </div>
 
-  <h1>인스타그램 / 틱톡 검색 및 관리</h1>
+  <h1 id="pageTitle">인스타그램 / 틱톡 검색 및 관리</h1>
 
-  <div class="form-group">
+  <div class="form-group" role="search" aria-labelledby="pageTitle">
     <label for="platformSelect">플랫폼:</label>
-    <select id="platformSelect">
+    <select id="platformSelect" aria-controls="resultTable">
       <option value="instagram">인스타그램</option>
       <option value="tiktok">틱톡</option>
     </select>
 
     <label for="groupSelect">그룹:</label>
-    <select id="groupSelect" disabled>
+    <select id="groupSelect" aria-controls="resultTable" disabled>
       <option value="">-- 전체 그룹 --</option>
     </select>
 
-    <label for="idNameInput">아이디 / 이름 검색:</label>
-    <input type="text" id="idNameInput" placeholder="아이디 또는 이름 일부 입력" />
+    <label for="starFilter">별점:</label>
+    <select id="starFilter" aria-controls="resultTable">
+      <option value="">-- 전체 --</option>
+      <option value="0">0</option>
+      <option value="1">1 ★</option>
+      <option value="2">2 ★★</option>
+      <option value="3">3 ★★★</option>
+      <option value="4">4 ★★★★</option>
+      <option value="5">5 ★★★★★</option>
+    </select>
 
-    <button id="searchBtn">검색</button>
+    <label for="idNameInput">검색 (아이디/이름/별명/메모):</label>
+    <input type="text" id="idNameInput" placeholder="검색어 입력" aria-controls="resultTable" />
+
+    <button id="searchBtn" aria-label="검색">검색</button>
   </div>
 
   <div class="table-container">
-    <table id="resultTable" style="display:none;">
+    <table id="resultTable" role="table" aria-label="검색 결과 목록" style="display:none;">
       <thead>
         <tr>
-          <th>아이디</th>
-          <th>이름</th>
-          <th>그룹</th>
-          <th>기록날짜</th>
-          <th>수정날짜</th>
-          <th>링크</th>
-          <th>수정</th>
-          <th>삭제</th>
+          <th scope="col">아이디</th>
+          <th scope="col">이름</th>
+          <th scope="col">별명</th>
+          <th scope="col">그룹</th>
+          <th scope="col">메모</th>
+          <th scope="col">별점</th>
+          <th scope="col">기록일</th>
+          <th scope="col">수정일</th>
+          <th scope="col">링크</th>
+          <th scope="col">수정</th>
+          <th scope="col">삭제</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<script type="module">
+  import {
+    initializeApp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getFirestore, collection, getDocs,
+    doc, updateDoc, deleteDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyA0FkKVoevwIkIAx64PycLm_bZDXk1Rflc",
-      authDomain: "instatiktok-1961b.firebaseapp.com",
-      projectId: "instatiktok-1961b",
-      storageBucket: "instatiktok-1961b.appspot.com",
-      messagingSenderId: "256647744023",
-      appId: "1:256647744023:web:1de0d62b5189088378aa52"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyA0FkKVoevwIkIAx64PycLm_bZDXk1Rflc",
+    authDomain: "instatiktok-1961b.firebaseapp.com",
+    projectId: "instatiktok-1961b",
+    storageBucket: "instatiktok-1961b.appspot.com",
+    messagingSenderId: "256647744023",
+    appId: "1:256647744023:web:1de0d62b5189088378aa52"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    const platformSelect = document.getElementById("platformSelect");
-    const groupSelect = document.getElementById("groupSelect");
-    const idNameInput = document.getElementById("idNameInput");
-    const searchBtn = document.getElementById("searchBtn");
-    const resultTable = document.getElementById("resultTable");
-    const resultBody = resultTable.querySelector("tbody");
+  const platformSelect = document.getElementById("platformSelect");
+  const groupSelect = document.getElementById("groupSelect");
+  const starFilter = document.getElementById("starFilter");
+  const idNameInput = document.getElementById("idNameInput");
+  const searchBtn = document.getElementById("searchBtn");
+  const resultTable = document.getElementById("resultTable");
+  const tbody = resultTable.querySelector("tbody");
 
-    // 플랫폼별 그룹 캐시
-    const platformGroupsCache = {
-      instagram: new Set(),
-      tiktok: new Set()
-    };
+  const platformGroupsCache = { instagram: new Set(), tiktok: new Set() };
 
-    // 날짜 포맷 함수
-    function formatDate(dateStr) {
-      return dateStr || "-";
-    }
-
-    // 현재 시간 문자열
-    function getCurrentTimestamp() {
-      const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, "0");
-      const dd = String(now.getDate()).padStart(2, "0");
-      const hh = String(now.getHours()).padStart(2, "0");
-      const min = String(now.getMinutes()).padStart(2, "0");
-      const ss = String(now.getSeconds()).padStart(2, "0");
-      return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
-    }
-
-    // 플랫폼 변경 시 그룹 로드
-    platformSelect.addEventListener("change", () => {
-      loadGroups(platformSelect.value);
-    });
-
-    // 그룹 로드 함수
-    async function loadGroups(platform) {
-      groupSelect.innerHTML = '<option value="">-- 전체 그룹 --</option>';
-      groupSelect.disabled = true;
-
-      if (platformGroupsCache[platform].size > 0) {
-        for (const g of platformGroupsCache[platform]) {
-          const opt = document.createElement("option");
-          opt.value = g;
-          opt.textContent = g;
-          groupSelect.appendChild(opt);
-        }
-        groupSelect.disabled = false;
-        return;
+  async function loadGroups(platform) {
+    groupSelect.innerHTML = '<option value="">-- 전체 그룹 --</option>';
+    groupSelect.disabled = true;
+    if (platformGroupsCache[platform].size) {
+      for (const g of platformGroupsCache[platform]) {
+        const opt = document.createElement("option");
+        opt.value = g;
+        opt.textContent = g;
+        groupSelect.appendChild(opt);
       }
-
-      try {
-        const snapshot = await getDocs(collection(db, platform));
-        const groups = new Set();
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          if (data.group) groups.add(data.group);
-        });
-        platformGroupsCache[platform] = groups;
-
-        for (const g of groups) {
-          const opt = document.createElement("option");
-          opt.value = g;
-          opt.textContent = g;
-          groupSelect.appendChild(opt);
-        }
-        groupSelect.disabled = false;
-      } catch (e) {
-        alert("그룹 불러오기 실패: " + e.message);
-      }
+      groupSelect.disabled = false;
+      return;
     }
-
-    // 이름/아이디 필터 매칭 함수 (부분일치)
-    function matchesIdNameFilter(filter, id, name) {
-      if (!filter) return true;
-      const f = filter.toLowerCase();
-      const idLower = (id || "").toLowerCase();
-      const nameLower = (name || "").toLowerCase();
-      return idLower.includes(f) || nameLower.includes(f);
-    }
-
-    // 검색 버튼 클릭
-    searchBtn.onclick = async () => {
-      const platform = platformSelect.value;
-      const group = groupSelect.value.trim();
-      const idNameFilter = idNameInput.value.trim();
-
-      if (!platform) {
-        alert("플랫폼을 선택하세요.");
-        return;
-      }
-
-      resultBody.innerHTML = "";
-      resultTable.style.display = "none";
-
-      try {
-        const snapshot = await getDocs(collection(db, platform));
-        let results = [];
-        snapshot.forEach(docSnap => {
-          const data = docSnap.data();
-          if (
-            !matchesIdNameFilter(idNameFilter, data.id, data.name) ||
-            (group && data.group !== group)
-          ) {
-            return;
-          }
-          results.push({ docId: docSnap.id, ...data });
-        });
-
-        if (results.length === 0) {
-          alert("조건에 맞는 결과가 없습니다.");
-          return;
-        }
-
-        // 최신순 정렬
-        results.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-        for (const item of results) {
-          const tr = document.createElement("tr");
-
-          tr.innerHTML = `
-            <td class="id-cell readonly-text" data-id="${item.docId}">
-              ${escapeHtml(item.id)}
-            </td>
-            <td class="name-cell readonly-text" data-id="${item.docId}">
-              ${escapeHtml(item.name || "")}
-            </td>
-            <td class="group-cell readonly-text" data-id="${item.docId}">
-              ${escapeHtml(item.group || "")}
-            </td>
-            <td>${formatDate(item.timestamp)}</td>
-            <td>${formatDate(item.lastEdited)}</td>
-            <td><a href="${item.link}" class="link-icon" target="_blank" rel="noopener noreferrer">📎</a></td>
-            <td><button class="editBtn" data-id="${item.docId}">✏️ 수정</button></td>
-            <td><button class="deleteBtn" data-id="${item.docId}">❌ 삭제</button></td>
-          `;
-
-          resultBody.appendChild(tr);
-        }
-
-        resultTable.style.display = "table";
-
-        // 수정 버튼 이벤트 등록
-        document.querySelectorAll(".editBtn").forEach(btn => {
-          btn.onclick = onEditClick;
-        });
-
-        // 삭제 버튼 이벤트 등록
-        document.querySelectorAll(".deleteBtn").forEach(btn => {
-          btn.onclick = onDeleteClick;
-        });
-
-      } catch (e) {
-        alert("검색 중 오류가 발생했습니다: " + e.message);
-      }
-    };
-
-    // HTML 특수문자 이스케이프 함수 (XSS 방지)
-    function escapeHtml(text) {
-      if (!text) return "";
-      return text.replace(/[&<>"']/g, function(m) {
-        return {
-          '&': "&amp;",
-          '<': "&lt;",
-          '>': "&gt;",
-          '"': "&quot;",
-          "'": "&#39;"
-        }[m];
+    try {
+      const snap = await getDocs(collection(db, platform));
+      const groups = new Set();
+      snap.forEach(d => {
+        if (d.data().group) groups.add(d.data().group);
       });
+      platformGroupsCache[platform] = groups;
+      groups.forEach(g => {
+        const opt = document.createElement("option");
+        opt.value = g;
+        opt.textContent = g;
+        groupSelect.appendChild(opt);
+      });
+      groupSelect.disabled = false;
+    } catch(e){
+      alert("그룹 불러오기 실패: "+ e.message);
     }
+  }
+  platformSelect.addEventListener("change", () => {
+    loadGroups(platformSelect.value);
+    groupSelect.value = "";
+  });
+  starFilter.addEventListener("change", () => {
+    searchBtn.click();
+  });
 
-    // 편집 버튼 클릭 핸들러
-    async function onEditClick(e) {
-      const btn = e.target;
-      const docId = btn.dataset.id;
-      const tr = btn.closest("tr");
+  function escapeHtml(text) {
+    if (!text) return "";
+    return text.replace(/[&<>"']/g, m => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]));
+  }
 
-      const idCell = tr.querySelector(".id-cell");
-      const nameCell = tr.querySelector(".name-cell");
-      const groupCell = tr.querySelector(".group-cell");
+  function filterMatch(filter, ...fields) {
+    if (!filter) return true;
+    filter = filter.toLowerCase();
+    return fields.some(f => (f||"").toLowerCase().includes(filter));
+  }
 
-      const isEditing = nameCell.querySelector("input") !== null;
+  function formatDate(str) {
+    return str || "-";
+  }
 
-      if (!isEditing) {
-        // 수정 모드 진입: input, select 생성
-        const currentId = idCell.textContent.trim();
-        const currentName = nameCell.textContent.trim();
+  function getCurrentTimestamp(){
+    const d = new Date();
+    return d.getFullYear() + '-' +
+      String(d.getMonth()+1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0') + ' ' +
+      String(d.getHours()).padStart(2, '0') + ':' +
+      String(d.getMinutes()).padStart(2, '0') + ':' +
+      String(d.getSeconds()).padStart(2, '0');
+  }
 
-        // id는 수정 불가 → 텍스트로 고정
-        idCell.innerHTML = `<span style="user-select:none; font-weight:bold;">${escapeHtml(currentId)}</span>`;
-
-        // 이름 input 생성
-        const nameInput = document.createElement("input");
-        nameInput.type = "text";
-        nameInput.className = "editable";
-        nameInput.value = currentName;
-        nameCell.innerHTML = "";
-        nameCell.appendChild(nameInput);
-
-        // 그룹 select 생성
-        const select = document.createElement("select");
-        select.className = "editable";
-
-        // 빈값 옵션
-        const emptyOpt = document.createElement("option");
-        emptyOpt.value = "";
-        emptyOpt.textContent = "(없음)";
-        select.appendChild(emptyOpt);
-
-        // 그룹 목록 세팅
-        for (const g of platformGroupsCache[platformSelect.value]) {
-          const opt = document.createElement("option");
-          opt.value = g;
-          opt.textContent = g;
-          select.appendChild(opt);
-        }
-
-        const currentGroup = groupCell.textContent.trim();
-        select.value = currentGroup || "";
-        groupCell.innerHTML = "";
-        groupCell.appendChild(select);
-
-        btn.textContent = "💾 저장";
-
+  function createStarHtml(starValue, clickable=true) {
+    let s = Math.round(starValue) || 0;
+    let html = '<span class="star-container">';
+    for(let i=1; i<=5; i++) {
+      const classes = ['star'];
+      if(i <= s) {
+        classes.push('');
       } else {
-        // 저장 모드: Firestore 업데이트
-        const nameInput = nameCell.querySelector("input");
-        const selectGroup = groupCell.querySelector("select");
+        classes.push('inactive');
+      }
+      if(clickable) classes.push('clickable');
+      html += `<span class="${classes.join(' ')}" data-star="${i}">★</span>`;
+    }
+    html += '</span>';
+    return html;
+  }
 
-        const newName = nameInput.value.trim();
-        const newGroup = selectGroup.value;
-
-        if (newGroup && !platformGroupsCache[platformSelect.value].has(newGroup)) {
-          platformGroupsCache[platformSelect.value].add(newGroup);
-          alert(`새 그룹 "${newGroup}" 이(가) 자동 추가되었습니다.`);
-        }
-
-        const docRef = doc(db, platformSelect.value, docId);
+  function bindStarClickHandlers() {
+    document.querySelectorAll('.star-container .star.clickable').forEach(starEl => {
+      starEl.onclick = async function(){
+        const starValue = parseInt(this.dataset.star);
+        const td = this.closest('td');
+        const docId = td.dataset.id;
+        const platform = platformSelect.value;
         try {
-          await updateDoc(docRef, {
-            name: newName,
-            group: newGroup,
-            lastEdited: getCurrentTimestamp()
+          await updateDoc(doc(db, platform, docId), {
+            star: starValue,
+            lastEdited: getCurrentTimestamp(),
           });
-          alert("수정 완료");
-          searchBtn.click(); // 재검색해서 UI 갱신
-        } catch (err) {
-          alert("수정 실패: " + err.message);
+          alert('별점이 변경되었습니다.');
+          searchBtn.click();
+        } catch(e) {
+          alert('별점 변경 실패: ' + e.message);
         }
-      }
+      };
+    });
+  }
+
+  function renderRows(items) {
+    tbody.innerHTML = '';
+    for(const item of items) {
+      const tr = document.createElement('tr');
+
+      tr.innerHTML = `
+        <td class="id-cell readonly">${escapeHtml(item.id||'')}</td>
+        <td class="name-cell readonly" data-docid="${item.docId}">${escapeHtml(item.name||'')}</td>
+        <td class="nickname-cell readonly" data-docid="${item.docId}">${escapeHtml(item.nickname||'')}</td>
+        <td class="group-cell readonly" data-docid="${item.docId}">${escapeHtml(item.group||'')}</td>
+        <td class="memo-cell readonly" data-docid="${item.docId}">${escapeHtml(item.memo||'')}</td>
+        <td class="star-cell" data-id="${item.docId}">${createStarHtml(item.star)}</td>
+        <td class="timestamp-cell">${formatDate(item.timestamp)}</td>
+        <td class="edited-cell">${formatDate(item.lastEdited)}</td>
+        <td class="link-cell"><a href="${item.link||'#'}" target="_blank" rel="noopener noreferrer" aria-label="내부 링크 열기">📎</a></td>
+        <td class="edit-cell"><button class="editBtn" data-docid="${item.docId}">✏️</button></td>
+        <td class="delete-cell"><button class="deleteBtn" data-docid="${item.docId}">❌</button></td>
+      `;
+
+      tbody.appendChild(tr);
     }
+    bindStarClickHandlers();
+    bindEditDeleteHandlers();
+  }
 
-    // 삭제 버튼 클릭 핸들러
-    async function onDeleteClick(e) {
-      if (!confirm("정말 삭제하시겠습니까?")) return;
-
-      const btn = e.target;
-      const docId = btn.dataset.id;
-      const docRef = doc(db, platformSelect.value, docId);
-
-      try {
-        await deleteDoc(docRef);
-        alert("삭제 완료");
-        searchBtn.click(); // 재검색해서 UI 갱신
-      } catch (err) {
-        alert("삭제 실패: " + err.message);
-      }
+  async function search() {
+    const platform = platformSelect.value;
+    const groupFilter = groupSelect.value.trim();
+    const starValueFilter = starFilter.value;
+    const keyword = idNameInput.value.trim().toLowerCase();
+    if(!platform){
+      alert('플랫폼을 선택하세요.');
+      return;
     }
+    tbody.innerHTML = '';
+    resultTable.style.display = 'none';
+    try {
+      const snap = await getDocs(collection(db, platform));
+      const dataSet = [];
+      snap.forEach(docSnap => {
+        const data = docSnap.data();
+        if(groupFilter && data.group !== groupFilter) return;
+        if(starValueFilter !== "" && (Number(data.star) || 0) !== Number(starValueFilter)) return;
+        if(keyword && ![
+          data.id||'', data.name||'', data.nickname||'', data.memo||''
+        ].some(field => (field||'').toLowerCase().includes(keyword))) return;
+        dataSet.push({ docId: docSnap.id, ...data });
+      });
+      if(dataSet.length === 0){
+        alert('검색 결과가 없습니다.');
+        return;
+      }
+      dataSet.sort((a,b) => new Date(b.timestamp || 0) - new Date(a.timestamp ||0));
+      renderRows(dataSet);
+      resultTable.style.display = 'table';
+    } catch(e){
+      alert('검색 중 오류 발생: '+ e.message);
+    }
+  }
 
-    // 초기 그룹 로드 (기본 instagram)
-    loadGroups("instagram");
-  </script>
+  function bindEditDeleteHandlers() {
+    document.querySelectorAll('.editBtn').forEach(btn => {
+      btn.onclick = async function(){
+        const tr = this.closest('tr');
+        const docId = this.dataset.docid;
+        const platform = platformSelect.value;
+        const isEditing = tr.querySelector('input.editable') !== null;
+        if(!isEditing){
+          const nameCell = tr.querySelector('.name-cell');
+          const nicknameCell = tr.querySelector('.nickname-cell');
+          const groupCell = tr.querySelector('.group-cell');
+          const memoCell = tr.querySelector('.memo-cell');
+          const starCell = tr.querySelector('.star-cell');
+
+          const origName = nameCell.textContent.trim();
+          const origNickname = nicknameCell.textContent.trim();
+          const origGroup = groupCell.textContent.trim();
+          const origMemo = memoCell.textContent.trim();
+          const origStar = Math.round(Number((starCell.querySelectorAll('.star:not(.inactive)').length) || 0));
+
+          nameCell.innerHTML = '';
+          const nameInput = document.createElement('input');
+          nameInput.className = 'editable';
+          nameInput.type = 'text';
+          nameInput.value = origName;
+          nameInput.style.width = '100%';
+          nameCell.appendChild(nameInput);
+
+          nicknameCell.innerHTML = '';
+          const nickInput = document.createElement('input');
+          nickInput.className = 'editable';
+          nickInput.type = 'text';
+          nickInput.value = origNickname;
+          nickInput.style.width = '100%';
+          nicknameCell.appendChild(nickInput);
+
+          groupCell.innerHTML = '';
+          const groupSelectInput = document.createElement('select');
+          groupSelectInput.className = 'editable';
+          groupSelectInput.style.width = '100%';
+          const groups = platformGroupsCache[platform];
+          const emptyOpt = document.createElement('option');
+          emptyOpt.value = '';
+          emptyOpt.textContent = '(없음)';
+          groupSelectInput.appendChild(emptyOpt);
+          groups.forEach(g => {
+            const option = document.createElement('option');
+            option.value = g;
+            option.textContent = g;
+            groupSelectInput.appendChild(option);
+          });
+          groupSelectInput.value = origGroup;
+          groupCell.appendChild(groupSelectInput);
+
+          memoCell.innerHTML = '';
+          const memoInput = document.createElement('input');
+          memoInput.className = 'editable';
+          memoInput.type = 'text';
+          memoInput.value = origMemo;
+          memoInput.style.width = '100%';
+          memoCell.appendChild(memoInput);
+
+          starCell.innerHTML = '';
+          const starSelect = document.createElement('select');
+          starSelect.className = 'editable';
+          starSelect.style.width = '80px';
+          for(let i=0; i<=5; i++){
+            let opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = i === 0 ? '(0)' : '★'.repeat(i);
+            starSelect.appendChild(opt);
+          }
+          starSelect.value = origStar;
+          starCell.appendChild(starSelect);
+
+          this.textContent = '💾';
+
+          if(!tr.querySelector('.cancelBtn')){
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'cancelBtn';
+            cancelBtn.textContent = '❌';
+            cancelBtn.style.marginLeft = '6px';
+            this.after(cancelBtn);
+
+            cancelBtn.onclick = () => {
+              nameCell.textContent = origName;
+              nicknameCell.textContent = origNickname;
+              groupCell.textContent = origGroup;
+              memoCell.textContent = origMemo;
+              starCell.innerHTML = createStarHtml(origStar, false);
+              bindStarClickHandlers();
+
+              this.textContent = '✏️';
+              cancelBtn.remove();
+            };
+          }
+        } else {
+          const nameInput = tr.querySelector('.name-cell input.editable');
+          const nickInput = tr.querySelector('.nickname-cell input.editable');
+          const groupSelect = tr.querySelector('.group-cell select.editable');
+          const memoInput = tr.querySelector('.memo-cell input.editable');
+          const starSelect = tr.querySelector('.star-cell select.editable');
+
+          const newName = nameInput.value.trim();
+          const newNickname = nickInput.value.trim();
+          const newGroup = groupSelect.value;
+          const newMemo = memoInput.value.trim();
+          const newStar = parseInt(starSelect.value);
+
+          if(newGroup && !platformGroupsCache[platform].has(newGroup)){
+            platformGroupsCache[platform].add(newGroup);
+            alert('새 그룹 "' + newGroup + '" 가 자동 추가되었습니다.\n(그룹 관리에서 따로 저장해주세요)');
+          }
+
+          try{
+            const docRef = doc(db, platform, docId);
+            await updateDoc(docRef, {
+              name: newName,
+              nickname: newNickname,
+              group: newGroup,
+              memo: newMemo,
+              star: newStar,
+              lastEdited: getCurrentTimestamp()
+            });
+            alert('수정 완료');
+            searchBtn.click();
+          } catch(e){
+            alert('수정 실패: ' + e.message);
+          }
+        }
+      };
+    });
+    bindDeleteHandlers();
+  }
+
+  function bindDeleteHandlers() {
+    document.querySelectorAll('.deleteBtn').forEach(btn=>{
+      btn.onclick = async function(){
+        if(!confirm('정말 삭제하시겠습니까?')) return;
+        const docId = this.dataset.docid;
+        const platform = platformSelect.value;
+        try {
+          await deleteDoc(doc(db, platform, docId));
+          alert('삭제 완료');
+          searchBtn.click();
+        } catch(e){
+          alert('삭제 실패: ' + e.message);
+        }
+      };
+    });
+  }
+
+  searchBtn.addEventListener('click', search);
+  loadGroups(platformSelect.value);
+</script>
 </body>
 </html>
