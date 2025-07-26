@@ -2,13 +2,16 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>틱톡 데이터 출력 (페이지 단위)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>틱톡 </title>
   <style>
     body {
       font-family: sans-serif;
       padding: 20px;
       max-width: 900px;
       margin: auto;
+      width: 100%;
+      box-sizing: border-box;
     }
     .one-line {
       white-space: nowrap;
@@ -37,6 +40,9 @@
       border-radius: 6px;
       background-color: #f0f0f0;
       transition: background-color 0.2s;
+      white-space: nowrap;
+      text-align: center;
+      user-select: none;
     }
     .nav a:hover {
       background-color: #ddd;
@@ -67,16 +73,27 @@
     select, input.editable {
       font-size: 14px;
       padding: 4px;
+      width: 100%;
+      box-sizing: border-box;
+      min-width: 80px;
+      max-width: 250px;
     }
     table {
       width: 100%;
+      min-width: 600px;
       border-collapse: collapse;
       margin-bottom: 10px;
+      table-layout: auto;
     }
     th, td {
+      white-space: nowrap;
       padding: 10px;
       border-bottom: 1px solid #ccc;
       text-align: left;
+      vertical-align: middle;
+      max-width: 250px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     td .readonly-text {
       cursor: default;
@@ -97,9 +114,28 @@
       background-color: #aaa;
       cursor: not-allowed;
     }
+    .star-container {
+      font-size: 16px;
+      color: gold;
+      letter-spacing: 2px;
+      user-select: none;
+    }
+    .star-container .star {
+      font-size: 19px;
+      color: gold;
+      display: inline-block;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .star-container .star.inactive {
+      color: #e0e0e0;
+      cursor: pointer;
+    }
     @media screen and (max-width: 768px) {
       body {
         padding: 15px;
+        max-width: 100%;
+        margin: 0;
       }
       .nav {
         flex-direction: column;
@@ -107,11 +143,17 @@
         gap: 15px;
       }
       .nav > div:first-child {
-        justify-content: center;
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+        gap: 10px;
       }
-      .nav a {
-        flex: 1 1 45%;
+      .nav > div:first-child > a {
+        flex: 1;
+        white-space: nowrap;
         text-align: center;
+        padding: 8px 12px;
+        box-sizing: border-box;
       }
       .group-add {
         flex-direction: column;
@@ -132,9 +174,12 @@
         overflow-x: auto;
         white-space: nowrap;
         font-size: 13px;
+        min-width: unset;
       }
       th, td {
+        white-space: nowrap;
         padding: 8px;
+        max-width: none;
       }
       button, select, input.editable {
         font-size: 14px;
@@ -147,6 +192,9 @@
         flex: 1 1 45%;
         padding: 12px 0;
         font-size: 16px;
+      }
+      .star-container {
+        font-size: 13px;
       }
     }
   </style>
@@ -165,28 +213,39 @@
     </div>
   </div>
 
-  <h1>틱톡 데이터 출력 (페이지 단위)</h1>
+  <h1>틱톡</h1>
 
   <label for="sortSelect">정렬 방식 선택:</label>
   <select id="sortSelect" style="margin-bottom: 20px;">
-    <option value="timestamp_desc" selected>최신순 (timestamp 내림차순)</option>
-    <option value="timestamp_asc">오래된순 (timestamp 오름차순)</option>
-    <option value="id_asc">아이디순 (id 오름차순)</option>
-    <option value="id_desc">역아이디순 (id 내림차순)</option>
-    <option value="name_asc">이름순 (name 오름차순)</option>
-    <option value="name_desc">역이름순 (name 내림차순)</option>
-    <option value="group_asc">그룹순 (group 오름차순)</option>
-    <option value="group_desc">역그룹순 (group 내림차순)</option>
-    <option value="lastEdited_asc">수정순 (lastEdited 오름차순)</option>
-    <option value="lastEdited_desc">역수정순 (lastEdited 내림차순)</option>
+    <option value="timestamp_desc" selected>최신순</option>
+    <option value="timestamp_asc">오래된순</option>
+    <option value="id_asc">아이디순</option>
+    <option value="id_desc">역아이디순</option>
+    <option value="name_asc">이름순</option>
+    <option value="name_desc">역이름순</option>
+    <option value="nickname_asc">별명순</option>
+    <option value="nickname_desc">역별명순</option>
+    <option value="group_asc">그룹순</option>
+    <option value="group_desc">역그룹순</option>
+    <option value="memo_asc">메모순</option>
+    <option value="memo_desc">역메모순</option>
+    <option value="star_asc">별점순</option>
+    <option value="star_desc">역별점순</option>
+    <option value="timestamp_asc">날짜순</option>
+    <option value="timestamp_desc">역날짜순</option>
+    <option value="lastEdited_asc">수정순</option>
+    <option value="lastEdited_desc">역수정순</option>
   </select>
 
-  <table id="dataTable">
+  <table id="dataTable" style="table-layout:auto;">
     <thead>
       <tr>
         <th>아이디</th>
         <th>이름</th>
+        <th>별명</th>
         <th>그룹</th>
+        <th>메모</th>
+        <th>별점</th>
         <th>기록날짜</th>
         <th>수정날짜</th>
         <th>링크</th>
@@ -233,6 +292,7 @@
     const PAGE_SIZE = 30;
     let data = [];
     let groups = new Set();
+
     const tableBody = document.querySelector("#dataTable tbody");
     const addGroupBtn = document.getElementById("addGroupBtn");
     const newGroupInput = document.getElementById("newGroupInput");
@@ -246,13 +306,35 @@
     let currentSortField = "timestamp";
     let currentSortDirection = "desc";
 
-    function formatDate(dateStr) {
-      return dateStr || "-";
+    function parseSortValue(value) {
+      const idx = value.lastIndexOf("_");
+      const field = value.substring(0, idx);
+      const dir = value.substring(idx + 1);
+      return { field, dir };
+    }
+
+    function isEmpty(v) {
+      return v === null || v === undefined || (typeof v === "string" && v.trim() === "");
+    }
+
+    function formatDate2Lines(str) {
+      if (!str || typeof str !== "string") return "-";
+      const arr = str.split(" ");
+      if (arr.length === 2) {
+        return `${arr[0]} ${arr[1]}`;
+      }
+      return str;
     }
 
     function getCurrentTimestamp() {
       const now = new Date();
-      return now.toISOString().slice(0, 19).replace("T", " ");
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      const hh = String(now.getHours()).padStart(2, "0");
+      const min = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
     }
 
     async function loadGroups() {
@@ -265,6 +347,83 @@
         });
       } catch (e) {
         alert("그룹 목록 불러오기 실패: " + e);
+      }
+    }
+
+    async function loadPage(cursor = null) {
+      const { field, dir } = { field: currentSortField, dir: currentSortDirection };
+
+      let q;
+      if (cursor) {
+        q = query(
+          collection(db, "tiktok"),
+          orderBy(field, dir),
+          startAfter(cursor),
+          limit(PAGE_SIZE)
+        );
+      } else {
+        q = query(
+          collection(db, "tiktok"),
+          orderBy(field, dir),
+          limit(PAGE_SIZE)
+        );
+      }
+
+      try {
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) {
+          alert("더 이상 데이터가 없습니다.");
+          nextBtn.disabled = true;
+          return;
+        }
+
+        data = [];
+
+        snapshot.forEach(docSnap => {
+          const item = { docId: docSnap.id, ...docSnap.data() };
+          data.push(item);
+        });
+
+        data.sort((a, b) => {
+          let field = currentSortField;
+          let direction = currentSortDirection;
+          let aVal = a[field];
+          let bVal = b[field];
+          if (["name", "nickname", "group", "memo"].includes(field)) {
+            aVal = isEmpty(aVal) ? (direction === "asc" ? "zzz" : "") : aVal;
+            bVal = isEmpty(bVal) ? (direction === "asc" ? "zzz" : "") : bVal;
+            return direction === "asc"
+              ? aVal.localeCompare(bVal)
+              : bVal.localeCompare(aVal);
+          }
+          if (field === "star") {
+            aVal = Number(aVal) || 0;
+            bVal = Number(bVal) || 0;
+            return direction === "asc" ? aVal - bVal : bVal - aVal;
+          }
+          if (["id"].includes(field)) {
+            aVal = aVal || "";
+            bVal = bVal || "";
+            return direction === "asc"
+              ? aVal.localeCompare(bVal)
+              : bVal.localeCompare(aVal);
+          }
+          if (["timestamp", "lastEdited"].includes(field)) {
+            aVal = aVal || "";
+            bVal = bVal || "";
+            return direction === "asc"
+              ? aVal.localeCompare(bVal)
+              : bVal.localeCompare(aVal);
+          }
+          return 0;
+        });
+
+        lastVisible = snapshot.docs[snapshot.docs.length - 1];
+        renderTable(data);
+        prevBtn.disabled = pageStack.length === 0;
+        nextBtn.disabled = snapshot.size < PAGE_SIZE;
+      } catch (e) {
+        alert("데이터 로드 실패: " + e);
       }
     }
 
@@ -286,33 +445,17 @@
       return select;
     }
 
-    async function loadPage(cursor = null) {
-      const { field, dir } = { field: currentSortField, dir: currentSortDirection };
-      let q = cursor
-        ? query(collection(db, "tiktok"), orderBy(field, dir), startAfter(cursor), limit(PAGE_SIZE))
-        : query(collection(db, "tiktok"), orderBy(field, dir), limit(PAGE_SIZE));
-      try {
-        const snapshot = await getDocs(q);
-        if (snapshot.empty) {
-          alert("더 이상 데이터가 없습니다.");
-          nextBtn.disabled = true;
-          return;
-        }
-
-        data = [];
-        snapshot.forEach(docSnap => {
-          const item = { docId: docSnap.id, ...docSnap.data() };
-          data.push(item);
-        });
-
-        lastVisible = snapshot.docs[snapshot.docs.length - 1];
-        renderTable(data);
-
-        prevBtn.disabled = pageStack.length === 0;
-        nextBtn.disabled = snapshot.size < PAGE_SIZE;
-      } catch (e) {
-        alert("데이터 로드 실패: " + e);
+    // 평시 별점 ★ 표시 생성 (클릭 시 바로 저장)
+    function getStarsHTML(star) {
+      const s = Math.round(Number(star) || 0);
+      let html = `<span class="star-container" style="user-select:none;">`;
+      for (let i = 1; i <= 5; i++) {
+        html += i <= s
+          ? `<span class="star clickable" data-starvalue="${i}">★</span>`
+          : `<span class="star clickable inactive" data-starvalue="${i}">★</span>`;
       }
+      html += `</span>`;
+      return html;
     }
 
     function renderTable(list) {
@@ -320,69 +463,186 @@
       list.forEach(item => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td class="one-line">${item.id || ""}</td>
-          <td class="one-line name-cell readonly-text" data-id="${item.docId}">${item.name || ""}</td>
-          <td class="one-line group-cell readonly-text" data-id="${item.docId}">${item.group || ""}</td>
-          <td class="one-line">${formatDate(item.timestamp)}</td>
-          <td class="one-line">${formatDate(item.lastEdited)}</td>
-          <td><a href="${item.link}" target="_blank" rel="noopener noreferrer">📎</a></td>
-          <td><button class="editBtn" data-id="${item.docId}">✏️ 수정</button></td>
-          <td><button class="deleteBtn" data-id="${item.docId}">❌ 삭제</button></td>
+          <td class="one-line" style="max-width:150px;">${item.id || ""}</td>
+          <td class="one-line name-cell readonly-text" data-id="${item.docId}" style="max-width:150px;">${item.name || ""}</td>
+          <td class="one-line nickname-cell readonly-text" data-id="${item.docId}" style="max-width:150px;">${item.nickname || ""}</td>
+          <td class="one-line group-cell readonly-text" data-id="${item.docId}" style="max-width:150px;">${item.group || ""}</td>
+          <td class="one-line memo-cell readonly-text" data-id="${item.docId}" style="max-width:150px;">${item.memo || ""}</td>
+          <td class="one-line star-cell readonly-text" data-id="${item.docId}" style="max-width:150px;">${getStarsHTML(item.star)}</td>
+          <td class="one-line" style="white-space: nowrap; max-width:150px;">${formatDate2Lines(item.timestamp)}</td>
+          <td class="one-line" style="white-space: nowrap; max-width:150px;">${formatDate2Lines(item.lastEdited)}</td>
+          <td style="max-width:100px;"><a href="${item.link}" target="_blank" rel="noopener noreferrer">📎</a></td>
+          <td style="max-width:100px;"><button class="editBtn" data-id="${item.docId}">✏️</button></td>
+          <td style="max-width:100px;"><button class="deleteBtn" data-id="${item.docId}">❌</button></td>
         `;
         tableBody.appendChild(tr);
       });
 
+      // 평시 별점 클릭 이벤트 (즉시 저장)
+      document.querySelectorAll(".star-cell").forEach(starCell => {
+        const docId = starCell.dataset.id;
+        starCell.querySelectorAll(".star.clickable").forEach(starEl => {
+          starEl.onclick = async () => {
+            const newStar = Number(starEl.dataset.starvalue);
+            try {
+              await updateDoc(doc(db, "tiktok", docId), {
+                star: newStar,
+                lastEdited: getCurrentTimestamp(),
+              });
+              await loadPage(pageStack.length > 0 ? pageStack[pageStack.length - 1] : null);
+            } catch (e) {
+              alert("별점 변경 실패: " + e);
+            }
+          };
+        });
+      });
+
+      // 수정 버튼 이벤트 (별점 드롭다운)
       document.querySelectorAll(".editBtn").forEach(btn => {
         btn.onclick = async (e) => {
           const id = e.target.dataset.id;
           const tr = e.target.closest("tr");
           const nameCell = tr.querySelector(".name-cell");
+          const nicknameCell = tr.querySelector(".nickname-cell");
           const groupCell = tr.querySelector(".group-cell");
+          const memoCell = tr.querySelector(".memo-cell");
+          const starCell = tr.querySelector(".star-cell");
           const editBtn = e.target;
 
-          const isEditing = nameCell.querySelector("input") !== null;
+          const isEditing = !!nameCell.querySelector("input");
+
           if (!isEditing) {
             const currentName = nameCell.textContent.trim();
+            const currentNickname = nicknameCell.textContent.trim();
             const currentGroup = groupCell.textContent.trim();
+            const currentMemo = memoCell.textContent.trim();
+            const currentStar = Math.round(Number((starCell.querySelectorAll(".star:not(.inactive)").length) || 0));
 
             const nameInput = document.createElement("input");
             nameInput.type = "text";
             nameInput.className = "editable";
             nameInput.value = currentName;
-            nameInput.dataset.id = id;
+            nameInput.style.width = "100%";
+            nameInput.style.boxSizing = "border-box";
+
+            const nicknameInput = document.createElement("input");
+            nicknameInput.type = "text";
+            nicknameInput.className = "editable";
+            nicknameInput.value = currentNickname;
+            nicknameInput.style.width = "100%";
+            nicknameInput.style.boxSizing = "border-box";
 
             const groupSelect = createGroupSelect(currentGroup, id);
+            groupSelect.style.width = "100%";
+            groupSelect.style.boxSizing = "border-box";
+
+            const memoInput = document.createElement("input");
+            memoInput.type = "text";
+            memoInput.className = "editable";
+            memoInput.value = currentMemo;
+            memoInput.style.width = "100%";
+            memoInput.style.boxSizing = "border-box";
+
+            const starSelect = document.createElement("select");
+            starSelect.className = "editable";
+            starSelect.style.width = "100%";
+            starSelect.style.boxSizing = "border-box";
+            for (let i = 0; i <= 5; i++) {
+              const opt = document.createElement("option");
+              opt.value = i;
+              opt.textContent = i === 0 ? "(0)" : "★".repeat(i);
+              starSelect.appendChild(opt);
+            }
+            starSelect.value = currentStar;
+
             nameCell.innerHTML = "";
             nameCell.appendChild(nameInput);
+            nameCell.classList.remove("readonly-text");
+
+            nicknameCell.innerHTML = "";
+            nicknameCell.appendChild(nicknameInput);
+            nicknameCell.classList.remove("readonly-text");
+
             groupCell.innerHTML = "";
             groupCell.appendChild(groupSelect);
-            editBtn.textContent = "💾 저장";
+            groupCell.classList.remove("readonly-text");
+
+            memoCell.innerHTML = "";
+            memoCell.appendChild(memoInput);
+            memoCell.classList.remove("readonly-text");
+
+            starCell.innerHTML = "";
+            starCell.appendChild(starSelect);
+            starCell.classList.remove("readonly-text");
+
+            editBtn.textContent = "💾";
+            if (!tr.querySelector(".cancelBtn")) {
+              const cancelBtn = document.createElement("button");
+              cancelBtn.textContent = "✖";
+              cancelBtn.className = "cancelBtn";
+              cancelBtn.style.marginLeft = "6px";
+              editBtn.after(cancelBtn);
+
+              cancelBtn.onclick = () => {
+                nameCell.textContent = currentName;
+                nameCell.classList.add("readonly-text");
+
+                nicknameCell.textContent = currentNickname;
+                nicknameCell.classList.add("readonly-text");
+
+                groupCell.textContent = currentGroup;
+                groupCell.classList.add("readonly-text");
+
+                memoCell.textContent = currentMemo;
+                memoCell.classList.add("readonly-text");
+
+                starCell.innerHTML = getStarsHTML(currentStar);
+                starCell.classList.add("readonly-text");
+
+                editBtn.textContent = "✏️";
+                cancelBtn.remove();
+              };
+            }
           } else {
             const nameInput = nameCell.querySelector("input");
+            const nicknameInput = nicknameCell.querySelector("input");
             const groupSelect = groupCell.querySelector("select");
+            const memoInput = memoCell.querySelector("input");
+            const starSelect = starCell.querySelector("select");
+
             const newName = nameInput.value.trim();
+            const newNickname = nicknameInput.value.trim();
             const newGroup = groupSelect.value;
+            const newMemo = memoInput.value.trim();
+            const newStar = Number(starSelect.value);
 
             if (newGroup && !groups.has(newGroup)) {
               groups.add(newGroup);
-              alert(`새 그룹 "${newGroup}" 자동 추가됨.\n(데이터베이스에는 저장되지 않음!)`);
+              alert(`새 그룹 "${newGroup}" 이(가) 자동 추가되었습니다.\n(데이터베이스에 저장되지 않았으니 그룹 추가 버튼으로 따로 저장하세요)`);
             }
 
             try {
               await updateDoc(doc(db, "tiktok", id), {
                 name: newName,
+                nickname: newNickname,
                 group: newGroup,
+                memo: newMemo,
+                star: newStar,
                 lastEdited: getCurrentTimestamp()
               });
               await loadPage(pageStack.length > 0 ? pageStack[pageStack.length - 1] : null);
             } catch (e) {
               alert("수정 실패: " + e);
             }
-            editBtn.textContent = "✏️ 수정";
+
+            editBtn.textContent = "✏️";
+            const cancelBtn = tr.querySelector(".cancelBtn");
+            if (cancelBtn) cancelBtn.remove();
           }
         };
       });
 
+      // 삭제 버튼 이벤트
       document.querySelectorAll(".deleteBtn").forEach(btn => {
         btn.onclick = async (e) => {
           if (!confirm("정말 삭제하시겠습니까?")) return;
@@ -391,17 +651,23 @@
             await deleteDoc(doc(db, "tiktok", id));
             alert("삭제 완료");
             await loadPage(pageStack.length > 0 ? pageStack[pageStack.length - 1] : null);
-          } catch (error) {
-            alert("삭제 실패: " + error);
+          } catch (e) {
+            alert("삭제 실패: " + e);
           }
         };
       });
     }
 
+    (async () => {
+      await loadGroups();
+      await loadPage();
+    })();
+
     sortSelect.onchange = () => {
-      const parsed = sortSelect.value.split("_");
-      currentSortField = parsed[0];
-      currentSortDirection = parsed[1];
+      const val = sortSelect.value;
+      const parsed = parseSortValue(val);
+      currentSortField = parsed.field;
+      currentSortDirection = parsed.dir;
       pageStack = [];
       lastVisible = null;
       loadPage();
@@ -413,7 +679,6 @@
         loadPage(lastVisible);
       }
     };
-
     prevBtn.onclick = () => {
       if (pageStack.length === 0) return;
       pageStack.pop();
@@ -423,8 +688,14 @@
 
     addGroupBtn.onclick = async () => {
       const newGroup = newGroupInput.value.trim();
-      if (!newGroup) return alert("그룹명을 입력해주세요.");
-      if (groups.has(newGroup)) return alert("이미 존재하는 그룹명입니다.");
+      if (!newGroup) {
+        alert("그룹명을 입력해주세요.");
+        return;
+      }
+      if (groups.has(newGroup)) {
+        alert("이미 존재하는 그룹명입니다.");
+        return;
+      }
       try {
         await addDoc(groupsCollection, { name: newGroup });
         groups.add(newGroup);
@@ -435,11 +706,6 @@
         alert("그룹 추가 실패: " + e);
       }
     };
-
-    (async () => {
-      await loadGroups();
-      await loadPage();
-    })();
   </script>
 </body>
 </html>
